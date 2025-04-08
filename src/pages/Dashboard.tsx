@@ -32,6 +32,12 @@ import { toast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { TaskProvider, useTaskContext } from "@/context/TaskContext";
+import CreateProjectModal from "@/components/dashboard/CreateProjectModal";
+import UploadFileModal from "@/components/dashboard/UploadFileModal";
+import InviteTeamModal from "@/components/dashboard/InviteTeamModal";
+import ScheduleMeetingModal from "@/components/dashboard/ScheduleMeetingModal";
+import CreateWhiteboardModal from "@/components/dashboard/CreateWhiteboardModal";
+import CreateDocumentModal from "@/components/dashboard/CreateDocumentModal";
 
 interface Organization {
   name: string;
@@ -44,7 +50,15 @@ const DashboardContent = () => {
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [userEmail, setUserEmail] = useState<string>("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { projects } = useTaskContext();
+  const { projects, deleteProject } = useTaskContext();
+  
+  // Modal states
+  const [createProjectOpen, setCreateProjectOpen] = useState(false);
+  const [uploadFileOpen, setUploadFileOpen] = useState(false);
+  const [inviteTeamOpen, setInviteTeamOpen] = useState(false);
+  const [scheduleMeetingOpen, setScheduleMeetingOpen] = useState(false);
+  const [createWhiteboardOpen, setCreateWhiteboardOpen] = useState(false);
+  const [createDocumentOpen, setCreateDocumentOpen] = useState(false);
 
   useEffect(() => {
     // Check if user is logged in
@@ -73,11 +87,14 @@ const DashboardContent = () => {
     navigate("/");
   };
 
-  const createNewProject = () => {
-    toast({
-      title: "Create New Project",
-      description: "Project creation modal would open here"
-    });
+  const handleDeleteProject = (id: string, name: string) => {
+    if (window.confirm(`Are you sure you want to delete "${name}"?`)) {
+      deleteProject(id);
+      toast({
+        title: "Project Deleted",
+        description: `"${name}" has been deleted.`,
+      });
+    }
   };
 
   const toggleMenu = () => {
@@ -193,7 +210,7 @@ const DashboardContent = () => {
           {/* Create new button row */}
           <div className="mb-6 flex flex-wrap gap-3">
             <Button 
-              onClick={createNewProject}
+              onClick={() => setCreateProjectOpen(true)}
               className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700"
             >
               <PlusCircle className="mr-2 h-5 w-5" /> Create New Project
@@ -203,10 +220,18 @@ const DashboardContent = () => {
                 <PlusCircle className="mr-2 h-5 w-5" /> Create Task
               </Button>
             </Link>
-            <Button variant="outline" className="border-indigo-200 text-indigo-700">
+            <Button 
+              variant="outline" 
+              className="border-indigo-200 text-indigo-700"
+              onClick={() => setUploadFileOpen(true)}
+            >
               <FileUp className="mr-2 h-5 w-5" /> Upload File
             </Button>
-            <Button variant="outline" className="border-indigo-200 text-indigo-700">
+            <Button 
+              variant="outline" 
+              className="border-indigo-200 text-indigo-700"
+              onClick={() => setInviteTeamOpen(true)}
+            >
               <Users className="mr-2 h-5 w-5" /> Invite Team Member
             </Button>
           </div>
@@ -262,7 +287,7 @@ const DashboardContent = () => {
                 variant="outline" 
                 size="sm" 
                 className="border-indigo-200 text-indigo-700"
-                onClick={createNewProject}
+                onClick={() => setCreateProjectOpen(true)}
               >
                 <PlusCircle className="mr-2 h-4 w-4" /> New Project
               </Button>
@@ -278,7 +303,10 @@ const DashboardContent = () => {
                         <button className="text-gray-400 hover:text-indigo-700">
                           <Edit className="h-4 w-4" />
                         </button>
-                        <button className="text-gray-400 hover:text-red-500">
+                        <button 
+                          className="text-gray-400 hover:text-red-500"
+                          onClick={() => handleDeleteProject(project.id, project.name)}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
@@ -321,7 +349,10 @@ const DashboardContent = () => {
               ))}
               
               {/* Add new project card */}
-              <Card className="border-dashed border-2 border-gray-300 bg-gray-50 hover:bg-white transition-colors hover:border-indigo-300 cursor-pointer flex items-center justify-center min-h-[220px]" onClick={createNewProject}>
+              <Card 
+                className="border-dashed border-2 border-gray-300 bg-gray-50 hover:bg-white transition-colors hover:border-indigo-300 cursor-pointer flex items-center justify-center min-h-[220px]" 
+                onClick={() => setCreateProjectOpen(true)}
+              >
                 <CardContent className="flex flex-col items-center justify-center p-6 text-center">
                   <PlusCircle className="h-12 w-12 text-indigo-400 mb-3" />
                   <p className="text-lg font-medium text-indigo-600">Create New Project</p>
@@ -348,7 +379,10 @@ const DashboardContent = () => {
                 </Card>
               </Link>
               
-              <Card className="hover:shadow-md transition-shadow bg-gradient-to-r from-purple-50 to-pink-50">
+              <Card 
+                className="hover:shadow-md transition-shadow bg-gradient-to-r from-purple-50 to-pink-50 cursor-pointer"
+                onClick={() => setCreateDocumentOpen(true)}
+              >
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg text-purple-700 flex items-center">
                     <FileText className="mr-2 h-5 w-5 text-purple-500" /> Documents
@@ -436,13 +470,25 @@ const DashboardContent = () => {
                   <PlusCircle className="mr-2 h-5 w-5" /> Create New Task
                 </Button>
               </Link>
-              <Button variant="outline" className="h-auto py-6 justify-start border-indigo-200 text-indigo-700 hover:bg-indigo-50 w-full">
+              <Button 
+                variant="outline" 
+                className="h-auto py-6 justify-start border-indigo-200 text-indigo-700 hover:bg-indigo-50 w-full"
+                onClick={() => setScheduleMeetingOpen(true)}
+              >
                 <Calendar className="mr-2 h-5 w-5" /> Schedule Meeting
               </Button>
-              <Button variant="outline" className="h-auto py-6 justify-start border-indigo-200 text-indigo-700 hover:bg-indigo-50 w-full">
+              <Button 
+                variant="outline" 
+                className="h-auto py-6 justify-start border-indigo-200 text-indigo-700 hover:bg-indigo-50 w-full"
+                onClick={() => setCreateWhiteboardOpen(true)}
+              >
                 <FileImage className="mr-2 h-5 w-5" /> Create Whiteboard
               </Button>
-              <Button variant="outline" className="h-auto py-6 justify-start border-indigo-200 text-indigo-700 hover:bg-indigo-50 w-full">
+              <Button 
+                variant="outline" 
+                className="h-auto py-6 justify-start border-indigo-200 text-indigo-700 hover:bg-indigo-50 w-full"
+                onClick={() => setCreateDocumentOpen(true)}
+              >
                 <BookOpen className="mr-2 h-5 w-5" /> Create Document
               </Button>
             </div>
@@ -481,6 +527,37 @@ const DashboardContent = () => {
           </section>
         </div>
       </main>
+
+      {/* Modals */}
+      <CreateProjectModal 
+        open={createProjectOpen} 
+        onOpenChange={setCreateProjectOpen} 
+      />
+      
+      <UploadFileModal 
+        open={uploadFileOpen} 
+        onOpenChange={setUploadFileOpen} 
+      />
+      
+      <InviteTeamModal 
+        open={inviteTeamOpen} 
+        onOpenChange={setInviteTeamOpen} 
+      />
+      
+      <ScheduleMeetingModal 
+        open={scheduleMeetingOpen} 
+        onOpenChange={setScheduleMeetingOpen} 
+      />
+      
+      <CreateWhiteboardModal 
+        open={createWhiteboardOpen} 
+        onOpenChange={setCreateWhiteboardOpen} 
+      />
+      
+      <CreateDocumentModal 
+        open={createDocumentOpen} 
+        onOpenChange={setCreateDocumentOpen} 
+      />
     </div>
   );
 };
