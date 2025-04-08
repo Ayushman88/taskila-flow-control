@@ -68,19 +68,28 @@ const UploadFileModal = ({ open, onOpenChange }: UploadFileModalProps) => {
         progress = 100;
         clearInterval(interval);
         
-        // When all files are complete, show success toast
-        if (files.every(f => f.id === fileId || f.progress === 100) && 
-            setFiles(prev => prev.map(f => f.id === fileId ? {...f, progress: 100} : f))) {
-          toast({
-            title: "Upload Complete",
-            description: "Your files have been uploaded successfully",
-          });
-        }
+        // Fix: Don't try to check the result of setFiles (which returns void)
+        setFiles(prev => {
+          const updatedFiles = prev.map(f => 
+            f.id === fileId ? {...f, progress: 100} : f
+          );
+          
+          // Check if all files are complete after state is updated
+          const allComplete = updatedFiles.every(f => f.progress === 100);
+          if (allComplete) {
+            toast({
+              title: "Upload Complete",
+              description: "Your files have been uploaded successfully",
+            });
+          }
+          
+          return updatedFiles;
+        });
+      } else {
+        setFiles(prev => prev.map(f => 
+          f.id === fileId ? {...f, progress} : f
+        ));
       }
-      
-      setFiles(prev => prev.map(f => 
-        f.id === fileId ? {...f, progress} : f
-      ));
     }, 300);
   };
 
