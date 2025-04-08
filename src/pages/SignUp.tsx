@@ -7,20 +7,32 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
-const SignIn = () => {
+const SignUp = () => {
   const navigate = useNavigate();
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    if (!email.trim() || !password.trim()) {
+    if (!name.trim() || !email.trim() || !password.trim() || !confirmPassword.trim()) {
       toast({
         title: "Error",
-        description: "Please enter both email and password",
+        description: "Please fill in all fields",
+        variant: "destructive",
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      toast({
+        title: "Error",
+        description: "Passwords do not match",
         variant: "destructive",
       });
       setIsSubmitting(false);
@@ -29,16 +41,16 @@ const SignIn = () => {
 
     // Simulate API call
     setTimeout(() => {
-      // Store user info (in a real app, this would validate against a database)
-      localStorage.setItem("user", JSON.stringify({ email }));
+      // Store user info
+      localStorage.setItem("user", JSON.stringify({ name, email }));
       
       toast({
         title: "Success!",
-        description: "You've been signed in successfully.",
+        description: "Your account has been created.",
       });
 
-      // Redirect to dashboard
-      navigate("/dashboard");
+      // Redirect to create organization
+      navigate("/create-organization");
       setIsSubmitting(false);
     }, 1000);
   };
@@ -55,14 +67,23 @@ const SignIn = () => {
         </Button>
 
         <div className="bg-white rounded-lg shadow-md p-6 border border-indigo-100">
-          <h1 className="text-2xl font-bold mb-6 text-indigo-800">Sign In to Taskila</h1>
-          
-          <p className="mb-6 text-gray-600">
-            Welcome back! Please sign in to continue.
-          </p>
+          <h1 className="text-2xl font-bold mb-6 text-indigo-800">Create your account</h1>
           
           <form onSubmit={handleSubmit}>
             <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Full Name</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="Enter your name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  className="border-indigo-200 focus-visible:ring-indigo-500"
+                />
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -81,9 +102,22 @@ const SignIn = () => {
                 <Input
                   id="password"
                   type="password"
-                  placeholder="Enter your password"
+                  placeholder="Create a password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="border-indigo-200 focus-visible:ring-indigo-500"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  placeholder="Confirm your password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                   className="border-indigo-200 focus-visible:ring-indigo-500"
                 />
@@ -94,17 +128,17 @@ const SignIn = () => {
                 className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700" 
                 disabled={isSubmitting}
               >
-                {isSubmitting ? "Signing in..." : "Sign In"}
+                {isSubmitting ? "Creating account..." : "Create Account"}
               </Button>
-              
+
               <div className="text-center text-sm text-gray-600">
-                Don't have an account?{" "}
+                Already have an account?{" "}
                 <button 
                   type="button"
                   className="text-indigo-600 hover:text-indigo-800 font-medium"
-                  onClick={() => navigate("/signup")}
+                  onClick={() => navigate("/signin")}
                 >
-                  Sign Up
+                  Sign In
                 </button>
               </div>
             </div>
@@ -115,4 +149,4 @@ const SignIn = () => {
   );
 };
 
-export default SignIn;
+export default SignUp;
