@@ -10,6 +10,10 @@ import CreateOrganization from "./pages/CreateOrganization";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import Dashboard from "./pages/Dashboard";
+import KanbanBoard from "./pages/KanbanBoard";
+import GanttChart from "./pages/GanttChart";
+import TaskList from "./pages/TaskList";
+import ProjectDetails from "./pages/ProjectDetails";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +29,10 @@ const App = () => (
           <Route path="/signin" element={<SignIn />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/kanban" element={<KanbanBoard />} />
+          <Route path="/gantt" element={<GanttChart />} />
+          <Route path="/tasks" element={<TaskList />} />
+          <Route path="/project/:id" element={<ProjectDetails />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

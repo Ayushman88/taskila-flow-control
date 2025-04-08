@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { 
   BarChart2, 
@@ -31,6 +31,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { TaskProvider, useTaskContext } from "@/context/TaskContext";
 
 interface Organization {
   name: string;
@@ -38,21 +39,12 @@ interface Organization {
   plan: string;
 }
 
-interface Project {
-  id: string;
-  name: string;
-  description: string;
-  status: string;
-  progress: number;
-  dueDate: string;
-}
-
-const Dashboard = () => {
+const DashboardContent = () => {
   const navigate = useNavigate();
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [userEmail, setUserEmail] = useState<string>("");
-  const [projects, setProjects] = useState<Project[]>([]);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { projects } = useTaskContext();
 
   useEffect(() => {
     // Check if user is logged in
@@ -70,26 +62,6 @@ const Dashboard = () => {
     if (orgStr) {
       setOrganization(JSON.parse(orgStr));
     }
-
-    // Sample project data
-    setProjects([
-      {
-        id: "1",
-        name: "Website Redesign",
-        description: "Update the company website with new branding",
-        status: "In Progress",
-        progress: 60,
-        dueDate: "2025-05-15"
-      },
-      {
-        id: "2",
-        name: "Mobile App Development",
-        description: "Create a mobile app for our customers",
-        status: "To Do",
-        progress: 10,
-        dueDate: "2025-06-30"
-      }
-    ]);
   }, [navigate]);
   
   const handleLogout = () => {
@@ -125,28 +97,28 @@ const Dashboard = () => {
         <nav className="p-2">
           <ul className="space-y-1">
             <li>
-              <a href="#" className="flex items-center space-x-3 px-3 py-2 rounded-md bg-indigo-700 text-white font-medium">
+              <Link to="/dashboard" className="flex items-center space-x-3 px-3 py-2 rounded-md bg-indigo-700 text-white font-medium">
                 <BarChart2 className="h-5 w-5" />
                 <span>Dashboard</span>
-              </a>
+              </Link>
             </li>
             <li>
-              <a href="#" className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors">
+              <Link to="/kanban" className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors">
                 <KanbanSquare className="h-5 w-5" />
                 <span>Kanban Board</span>
-              </a>
+              </Link>
             </li>
             <li>
-              <a href="#" className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors">
+              <Link to="/gantt" className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors">
                 <GanttChartSquare className="h-5 w-5" />
                 <span>Gantt Chart</span>
-              </a>
+              </Link>
             </li>
             <li>
-              <a href="#" className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors">
+              <Link to="/tasks" className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors">
                 <List className="h-5 w-5" />
                 <span>Task List</span>
-              </a>
+              </Link>
             </li>
             <li>
               <a href="#" className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors">
@@ -226,9 +198,11 @@ const Dashboard = () => {
             >
               <PlusCircle className="mr-2 h-5 w-5" /> Create New Project
             </Button>
-            <Button variant="outline" className="border-indigo-200 text-indigo-700">
-              <PlusCircle className="mr-2 h-5 w-5" /> Create Task
-            </Button>
+            <Link to="/tasks">
+              <Button variant="outline" className="border-indigo-200 text-indigo-700">
+                <PlusCircle className="mr-2 h-5 w-5" /> Create Task
+              </Button>
+            </Link>
             <Button variant="outline" className="border-indigo-200 text-indigo-700">
               <FileUp className="mr-2 h-5 w-5" /> Upload File
             </Button>
@@ -248,8 +222,11 @@ const Dashboard = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">12</div>
-                  <div className="text-gray-500 text-sm">5 in progress, 7 to do</div>
+                  <div className="text-3xl font-bold">{projects.reduce((acc, project) => {
+                    const projectTasks = projects.length;
+                    return acc + projectTasks;
+                  }, 0)}</div>
+                  <div className="text-gray-500 text-sm">Open tasks across all projects</div>
                 </CardContent>
               </Card>
               <Card className="border-l-4 border-l-purple-500 shadow-md hover:shadow-lg transition-shadow">
@@ -259,8 +236,8 @@ const Dashboard = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">3</div>
-                  <div className="text-gray-500 text-sm">1 active, 2 in planning</div>
+                  <div className="text-3xl font-bold">{projects.length}</div>
+                  <div className="text-gray-500 text-sm">{projects.filter(p => p.status === "In Progress").length} active, {projects.filter(p => p.status === "To Do").length} in planning</div>
                 </CardContent>
               </Card>
               <Card className="border-l-4 border-l-green-500 shadow-md hover:shadow-lg transition-shadow">
@@ -332,6 +309,13 @@ const Dashboard = () => {
                         {project.status}
                       </div>
                     </div>
+                    <div className="mt-4">
+                      <Link to={`/project/${project.id}`}>
+                        <Button variant="outline" size="sm" className="w-full border-indigo-200 text-indigo-700">
+                          View Project
+                        </Button>
+                      </Link>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
@@ -351,16 +335,18 @@ const Dashboard = () => {
           <section className="mb-8">
             <h2 className="text-2xl font-bold mb-4 text-indigo-800">Features Available</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card className="hover:shadow-md transition-shadow bg-gradient-to-r from-blue-50 to-indigo-50">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg text-indigo-700 flex items-center">
-                    <KanbanSquare className="mr-2 h-5 w-5 text-indigo-500" /> Task Management
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm text-gray-600">
-                  Kanban boards, lists, and Gantt charts for any project type
-                </CardContent>
-              </Card>
+              <Link to="/kanban">
+                <Card className="hover:shadow-md transition-shadow bg-gradient-to-r from-blue-50 to-indigo-50">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg text-indigo-700 flex items-center">
+                      <KanbanSquare className="mr-2 h-5 w-5 text-indigo-500" /> Task Management
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-sm text-gray-600">
+                    Kanban boards, lists, and Gantt charts for any project type
+                  </CardContent>
+                </Card>
+              </Link>
               
               <Card className="hover:shadow-md transition-shadow bg-gradient-to-r from-purple-50 to-pink-50">
                 <CardHeader className="pb-2">
@@ -445,16 +431,18 @@ const Dashboard = () => {
           <section className="mb-8">
             <h2 className="text-2xl font-bold mb-4 text-indigo-800">Quick Actions</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Button className="h-auto py-6 justify-start bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700">
-                <PlusCircle className="mr-2 h-5 w-5" /> Create New Task
-              </Button>
-              <Button variant="outline" className="h-auto py-6 justify-start border-indigo-200 text-indigo-700 hover:bg-indigo-50">
+              <Link to="/tasks">
+                <Button className="h-auto py-6 justify-start bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 w-full">
+                  <PlusCircle className="mr-2 h-5 w-5" /> Create New Task
+                </Button>
+              </Link>
+              <Button variant="outline" className="h-auto py-6 justify-start border-indigo-200 text-indigo-700 hover:bg-indigo-50 w-full">
                 <Calendar className="mr-2 h-5 w-5" /> Schedule Meeting
               </Button>
-              <Button variant="outline" className="h-auto py-6 justify-start border-indigo-200 text-indigo-700 hover:bg-indigo-50">
+              <Button variant="outline" className="h-auto py-6 justify-start border-indigo-200 text-indigo-700 hover:bg-indigo-50 w-full">
                 <FileImage className="mr-2 h-5 w-5" /> Create Whiteboard
               </Button>
-              <Button variant="outline" className="h-auto py-6 justify-start border-indigo-200 text-indigo-700 hover:bg-indigo-50">
+              <Button variant="outline" className="h-auto py-6 justify-start border-indigo-200 text-indigo-700 hover:bg-indigo-50 w-full">
                 <BookOpen className="mr-2 h-5 w-5" /> Create Document
               </Button>
             </div>
@@ -496,5 +484,12 @@ const Dashboard = () => {
     </div>
   );
 };
+
+// Wrap the dashboard content with the TaskProvider
+const Dashboard = () => (
+  <TaskProvider>
+    <DashboardContent />
+  </TaskProvider>
+);
 
 export default Dashboard;
