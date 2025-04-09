@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -236,6 +235,8 @@ const SettingsContent = () => {
   };
 
   if (!user || !organization) return <div className="p-8">Loading...</div>;
+
+  const projectsLength = projects && Array.isArray(projects) ? projects.length : 0;
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
