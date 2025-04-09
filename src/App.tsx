@@ -14,6 +14,12 @@ import KanbanBoard from "./pages/KanbanBoard";
 import GanttChart from "./pages/GanttChart";
 import TaskList from "./pages/TaskList";
 import ProjectDetails from "./pages/ProjectDetails";
+import TimeTracking from "./pages/TimeTracking";
+import FilesAndDocs from "./pages/FilesAndDocs";
+import Chat from "./pages/Chat";
+import Notes from "./pages/Notes";
+import Team from "./pages/Team";
+import Settings from "./pages/Settings";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +39,12 @@ const App = () => (
           <Route path="/gantt" element={<GanttChart />} />
           <Route path="/tasks" element={<TaskList />} />
           <Route path="/project/:id" element={<ProjectDetails />} />
+          <Route path="/time-tracking" element={<TimeTracking />} />
+          <Route path="/files" element={<FilesAndDocs />} />
+          <Route path="/chat" element={<Chat />} />
+          <Route path="/notes" element={<Notes />} />
+          <Route path="/team" element={<Team />} />
+          <Route path="/settings" element={<Settings />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
