@@ -122,6 +122,15 @@ const SettingsContent = () => {
     const orgStr = localStorage.getItem("organization");
     if (orgStr) {
       setOrganization(JSON.parse(orgStr));
+    } else {
+      // Set a default organization if none exists to prevent errors
+      setOrganization({
+        name: "My Organization",
+        teamSize: "1-10",
+        plan: "Free",
+        billingCycle: "Monthly",
+        nextBillingDate: "N/A"
+      });
     }
   }, [navigate]);
 
@@ -423,7 +432,8 @@ const SettingsContent = () => {
                       {organization.plan} Plan
                     </div>
                     <div className="mt-1 text-xs text-gray-500">
-                      Billing {organization.billingCycle.toLowerCase()}, renews {organization.nextBillingDate}
+                      {/* Fix for the toLowerCase error - add null check */}
+                      Billing {organization.billingCycle ? organization.billingCycle.toLowerCase() : 'monthly'}, renews {organization.nextBillingDate || 'N/A'}
                     </div>
                     <Button 
                       variant="outline"
@@ -581,7 +591,10 @@ const SettingsContent = () => {
                         <div className="flex justify-between items-center">
                           <div>
                             <div className="font-semibold text-lg">{organization.plan} Plan</div>
-                            <div className="text-sm text-gray-500">Billed {organization.billingCycle.toLowerCase()}</div>
+                            <div className="text-sm text-gray-500">
+                              {/* Add null check for billingCycle */}
+                              Billed {organization.billingCycle ? organization.billingCycle.toLowerCase() : 'monthly'}
+                            </div>
                           </div>
                           <div className="text-right">
                             <div className="font-medium text-lg">
@@ -590,7 +603,7 @@ const SettingsContent = () => {
                                organization.plan === "Pro" ? "$25/month" : 
                                "$50/month"}
                             </div>
-                            <div className="text-sm text-gray-500">Next billing: {organization.nextBillingDate}</div>
+                            <div className="text-sm text-gray-500">Next billing: {organization.nextBillingDate || 'N/A'}</div>
                           </div>
                         </div>
                         <div className="mt-4 flex gap-3">
