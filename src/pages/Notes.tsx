@@ -3,14 +3,12 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   BarChart2, 
   List, 
   LogOut, 
-  PlusCircle, 
   Settings, 
   Users,
   Calendar,
@@ -22,14 +20,11 @@ import {
   BookOpen,
   Menu,
   Clock,
-  ArrowLeft,
-  Edit,
+  Plus,
   Trash2,
-  Star,
-  Tag,
-  Share2,
-  Bookmark,
-  BrainCircuit
+  Edit,
+  ChevronDown,
+  ArrowLeft
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { TaskProvider, useTaskContext } from "@/context/TaskContext";
@@ -44,71 +39,71 @@ interface Note {
   id: string;
   title: string;
   content: string;
-  createdAt: string;
-  updatedAt: string;
   tags: string[];
-  projectId: string | null;
-  isFavorite: boolean;
   color: string;
+  lastEdited: string;
+  projectId: string | null;
 }
 
 // Sample notes for demonstration
 const sampleNotes: Note[] = [
   {
     id: "note1",
-    title: "Project Kickoff Ideas",
-    content: "- Define project scope\n- Identify key stakeholders\n- Establish project timeline\n- Set up communication channels\n- Discuss budget constraints",
-    createdAt: "2023-03-15T10:00:00Z",
-    updatedAt: "2023-03-15T10:30:00Z",
-    tags: ["project", "planning"],
-    projectId: null,
-    isFavorite: true,
-    color: "bg-amber-100"
+    title: "Project Kickoff Meeting Notes",
+    content: `# Project Kickoff
+- Timeline: 8 weeks
+- Team: 4 developers, 1 designer
+- Key goals: Improve user engagement by 20%
+
+## Action Items
+- Set up repository structure
+- Create wireframes for dashboard
+- Research API integration options`,
+    tags: ["meeting", "project"],
+    color: "bg-yellow-100",
+    lastEdited: "2023-04-01",
+    projectId: null
   },
   {
     id: "note2",
-    title: "Interview Questions",
-    content: "1. Tell me about your experience with React.\n2. How do you handle state management?\n3. Describe your workflow with Git.\n4. How do you approach testing?\n5. What's your experience with Agile methodologies?",
-    createdAt: "2023-03-18T14:20:00Z",
-    updatedAt: "2023-03-18T15:45:00Z",
-    tags: ["interview", "hiring"],
-    projectId: null,
-    isFavorite: false,
-    color: "bg-blue-100"
+    title: "Feature Ideas",
+    content: `# Future Features
+1. Enhanced reporting dashboard
+2. Mobile app integration
+3. Team calendar with reminders
+4. AI-powered task recommendations
+
+Need to prioritize these for Q3 roadmap.`,
+    tags: ["ideas", "roadmap"],
+    color: "bg-blue-100",
+    lastEdited: "2023-04-02",
+    projectId: null
   },
   {
     id: "note3",
-    title: "Marketing Campaign Ideas",
-    content: "Social Media:\n- Instagram stories with product demos\n- LinkedIn posts on industry trends\n- Twitter threads about customer success stories\n\nEmail Marketing:\n- Weekly newsletter with tips\n- Special promotion for existing customers\n- Re-engagement campaign for inactive users",
-    createdAt: "2023-03-20T09:15:00Z",
-    updatedAt: "2023-03-21T11:30:00Z",
-    tags: ["marketing", "social media"],
-    projectId: null,
-    isFavorite: true,
-    color: "bg-green-100"
-  },
-  {
-    id: "note4",
-    title: "Weekly Team Meeting Notes",
-    content: "Attendees: John, Sarah, Mark, Lisa\n\nAgenda:\n1. Project status updates\n2. Blockers and challenges\n3. Next week priorities\n4. Open discussion\n\nAction Items:\n- John: Finalize the design specs\n- Sarah: Schedule user testing sessions\n- Mark: Investigate performance bottlenecks\n- Lisa: Prepare monthly report",
-    createdAt: "2023-03-22T15:00:00Z",
-    updatedAt: "2023-03-22T16:30:00Z",
-    tags: ["meeting", "team"],
-    projectId: null,
-    isFavorite: false,
-    color: "bg-purple-100"
-  },
-  {
-    id: "note5",
-    title: "Product Feature Brainstorm",
-    content: "User Authentication:\n- Social login options\n- Two-factor authentication\n- Password reset flow\n\nDashboard:\n- Customizable widgets\n- Real-time metrics\n- Export functionality\n\nSettings:\n- Profile management\n- Notification preferences\n- Theme customization",
-    createdAt: "2023-03-24T11:45:00Z",
-    updatedAt: "2023-03-25T09:20:00Z",
-    tags: ["product", "features", "brainstorm"],
-    projectId: null,
-    isFavorite: true,
-    color: "bg-rose-100"
+    title: "Client Feedback",
+    content: `# Client Meeting Summary
+Client would like the following changes:
+- Simplified navigation
+- Faster loading time for reports
+- Additional export formats
+- Custom branding options
+
+Priority: High`,
+    tags: ["client", "feedback"],
+    color: "bg-green-100",
+    lastEdited: "2023-04-03",
+    projectId: null
   }
+];
+
+const noteColors = [
+  { name: "Default", value: "bg-white" },
+  { name: "Yellow", value: "bg-yellow-100" },
+  { name: "Green", value: "bg-green-100" },
+  { name: "Blue", value: "bg-blue-100" },
+  { name: "Purple", value: "bg-purple-100" },
+  { name: "Pink", value: "bg-pink-100" }
 ];
 
 const NotesContent = () => {
@@ -116,27 +111,22 @@ const NotesContent = () => {
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [userEmail, setUserEmail] = useState<string>("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [notes, setNotes] = useState<Note[]>(sampleNotes);
-  const [activeTab, setActiveTab] = useState("all");
+  const [notes, setNotes] = useState<Note[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [editingNote, setEditingNote] = useState<Note | null>(null);
-  const [tempNoteTitle, setTempNoteTitle] = useState("");
-  const [tempNoteContent, setTempNoteContent] = useState("");
-  const [tempNoteColor, setTempNoteColor] = useState("bg-white");
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [activeNote, setActiveNote] = useState<Note | null>(null);
+  const [editMode, setEditMode] = useState(false);
+  const [noteTitle, setNoteTitle] = useState("");
+  const [noteContent, setNoteContent] = useState("");
+  const [noteColor, setNoteColor] = useState("bg-white");
+  const [noteTags, setNoteTags] = useState<string[]>([]);
+  const [newTag, setNewTag] = useState("");
+  const [isColorPickerOpen, setIsColorPickerOpen] = useState(false);
   
   const { projects } = useTaskContext();
 
-  // Available note colors
-  const noteColors = [
-    { name: "White", value: "bg-white" },
-    { name: "Amber", value: "bg-amber-100" },
-    { name: "Blue", value: "bg-blue-100" },
-    { name: "Green", value: "bg-green-100" },
-    { name: "Purple", value: "bg-purple-100" },
-    { name: "Rose", value: "bg-rose-100" },
-    { name: "Indigo", value: "bg-indigo-100" },
-    { name: "Cyan", value: "bg-cyan-100" }
-  ];
+  // Get all unique tags from notes
+  const allTags = [...new Set(notes.flatMap(note => note.tags))];
 
   useEffect(() => {
     // Check if user is logged in
@@ -162,6 +152,7 @@ const NotesContent = () => {
     } else {
       // Save sample notes to localStorage
       localStorage.setItem("notes", JSON.stringify(sampleNotes));
+      setNotes(sampleNotes);
     }
   }, [navigate]);
 
@@ -178,172 +169,138 @@ const NotesContent = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
+  // Filter notes based on search term and selected tag
+  const filteredNotes = notes.filter(note => {
+    const matchesSearch = note.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         note.content.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesTag = selectedTag ? note.tags.includes(selectedTag) : true;
+    return matchesSearch && matchesTag;
+  });
+
   // Create a new note
-  const createNote = () => {
-    const newNote: Note = {
-      id: crypto.randomUUID(),
-      title: "Untitled Note",
-      content: "",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      tags: [],
-      projectId: null,
-      isFavorite: false,
-      color: "bg-white"
-    };
-    
-    const updatedNotes = [newNote, ...notes];
-    setNotes(updatedNotes);
-    localStorage.setItem("notes", JSON.stringify(updatedNotes));
-    
-    // Start editing the new note
-    setEditingNote(newNote);
-    setTempNoteTitle("Untitled Note");
-    setTempNoteContent("");
-    setTempNoteColor("bg-white");
+  const createNewNote = () => {
+    setActiveNote(null);
+    setNoteTitle("New Note");
+    setNoteContent("");
+    setNoteColor("bg-white");
+    setNoteTags([]);
+    setEditMode(true);
   };
 
-  // Delete a note
-  const deleteNote = (id: string) => {
-    if (window.confirm("Are you sure you want to delete this note?")) {
-      const updatedNotes = notes.filter(note => note.id !== id);
+  // View a note
+  const viewNote = (note: Note) => {
+    setActiveNote(note);
+    setNoteTitle(note.title);
+    setNoteContent(note.content);
+    setNoteColor(note.color);
+    setNoteTags([...note.tags]);
+    setEditMode(false);
+  };
+
+  // Edit an existing note
+  const editNote = () => {
+    if (!activeNote) return;
+    setEditMode(true);
+  };
+
+  // Save the current note
+  const saveNote = () => {
+    const currentDate = new Date().toISOString().split('T')[0];
+    
+    if (activeNote) {
+      // Update existing note
+      const updatedNotes = notes.map(note => 
+        note.id === activeNote.id ? 
+          { ...note, title: noteTitle, content: noteContent, tags: noteTags, color: noteColor, lastEdited: currentDate } : 
+          note
+      );
       setNotes(updatedNotes);
-      localStorage.setItem("notes", JSON.stringify(updatedNotes));
+      setActiveNote({ ...activeNote, title: noteTitle, content: noteContent, tags: noteTags, color: noteColor, lastEdited: currentDate });
       
-      if (editingNote && editingNote.id === id) {
-        setEditingNote(null);
-      }
+      toast({
+        title: "Note Updated",
+        description: "Your note has been successfully updated."
+      });
+    } else {
+      // Create new note
+      const newNote: Note = {
+        id: crypto.randomUUID(),
+        title: noteTitle,
+        content: noteContent,
+        tags: noteTags,
+        color: noteColor,
+        lastEdited: currentDate,
+        projectId: null
+      };
+      
+      const updatedNotes = [newNote, ...notes];
+      setNotes(updatedNotes);
+      setActiveNote(newNote);
+      
+      toast({
+        title: "Note Created",
+        description: "Your new note has been created successfully."
+      });
+    }
+    
+    // Save to localStorage
+    localStorage.setItem("notes", JSON.stringify(activeNote ? 
+      notes.map(note => note.id === activeNote.id ? 
+        { ...note, title: noteTitle, content: noteContent, tags: noteTags, color: noteColor, lastEdited: currentDate } : 
+        note) : 
+      [{ 
+        id: crypto.randomUUID(), 
+        title: noteTitle, 
+        content: noteContent, 
+        tags: noteTags, 
+        color: noteColor, 
+        lastEdited: currentDate,
+        projectId: null
+      }, ...notes]
+    ));
+    
+    setEditMode(false);
+  };
+
+  // Delete the current note
+  const deleteNote = () => {
+    if (!activeNote) return;
+    
+    if (window.confirm("Are you sure you want to delete this note?")) {
+      const updatedNotes = notes.filter(note => note.id !== activeNote.id);
+      setNotes(updatedNotes);
+      setActiveNote(null);
+      setEditMode(false);
+      
+      // Save to localStorage
+      localStorage.setItem("notes", JSON.stringify(updatedNotes));
       
       toast({
         title: "Note Deleted",
-        description: "Your note has been permanently deleted."
+        description: "Your note has been deleted successfully."
       });
     }
   };
 
-  // Toggle favorite status of a note
-  const toggleFavorite = (id: string) => {
-    const updatedNotes = notes.map(note => 
-      note.id === id ? { ...note, isFavorite: !note.isFavorite } : note
-    );
-    
-    setNotes(updatedNotes);
-    localStorage.setItem("notes", JSON.stringify(updatedNotes));
-    
-    // Update editing note if it's the same one
-    if (editingNote && editingNote.id === id) {
-      setEditingNote({ ...editingNote, isFavorite: !editingNote.isFavorite });
-    }
-  };
-
-  // Start editing a note
-  const startEditing = (note: Note) => {
-    setEditingNote(note);
-    setTempNoteTitle(note.title);
-    setTempNoteContent(note.content);
-    setTempNoteColor(note.color);
-  };
-
-  // Save edited note
-  const saveNote = () => {
-    if (!editingNote) return;
-    
-    const updatedNote: Note = {
-      ...editingNote,
-      title: tempNoteTitle || "Untitled Note",
-      content: tempNoteContent,
-      updatedAt: new Date().toISOString(),
-      color: tempNoteColor
-    };
-    
-    const updatedNotes = notes.map(note => 
-      note.id === updatedNote.id ? updatedNote : note
-    );
-    
-    setNotes(updatedNotes);
-    setEditingNote(updatedNote);
-    localStorage.setItem("notes", JSON.stringify(updatedNotes));
-    
-    toast({
-      title: "Note Saved",
-      description: "Your changes have been saved successfully."
-    });
-  };
-
-  // Add a tag to a note
+  // Add a tag to the current note
   const addTag = () => {
-    if (!editingNote) return;
+    if (!newTag.trim()) return;
     
-    const tag = prompt("Enter a tag name:");
-    if (!tag) return;
-    
-    // Don't add duplicate tags
-    if (editingNote.tags.includes(tag)) {
-      toast({
-        title: "Tag already exists",
-        description: `The tag "${tag}" is already added to this note.`,
-        variant: "destructive"
-      });
-      return;
+    if (!noteTags.includes(newTag)) {
+      setNoteTags([...noteTags, newTag]);
     }
     
-    const updatedTags = [...editingNote.tags, tag];
-    const updatedNote = { ...editingNote, tags: updatedTags };
-    
-    const updatedNotes = notes.map(note => 
-      note.id === updatedNote.id ? updatedNote : note
-    );
-    
-    setNotes(updatedNotes);
-    setEditingNote(updatedNote);
-    localStorage.setItem("notes", JSON.stringify(updatedNotes));
-    
-    toast({
-      title: "Tag Added",
-      description: `Added tag "${tag}" to your note.`
-    });
+    setNewTag("");
   };
 
-  // Remove a tag from a note
-  const removeTag = (tag: string) => {
-    if (!editingNote) return;
-    
-    const updatedTags = editingNote.tags.filter(t => t !== tag);
-    const updatedNote = { ...editingNote, tags: updatedTags };
-    
-    const updatedNotes = notes.map(note => 
-      note.id === updatedNote.id ? updatedNote : note
-    );
-    
-    setNotes(updatedNotes);
-    setEditingNote(updatedNote);
-    localStorage.setItem("notes", JSON.stringify(updatedNotes));
+  // Remove a tag from the current note
+  const removeTag = (tagToRemove: string) => {
+    setNoteTags(noteTags.filter(tag => tag !== tagToRemove));
   };
 
-  // Filter notes based on active tab and search term
-  const filteredNotes = () => {
-    return notes.filter(note => {
-      // Apply tab filter
-      if (activeTab === "favorites" && !note.isFavorite) return false;
-      
-      // Apply search filter
-      if (searchTerm) {
-        const searchLower = searchTerm.toLowerCase();
-        return (
-          note.title.toLowerCase().includes(searchLower) ||
-          note.content.toLowerCase().includes(searchLower) ||
-          note.tags.some(tag => tag.toLowerCase().includes(searchLower))
-        );
-      }
-      
-      return true;
-    });
-  };
-
-  // Format date for display
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  // Filter notes by tag
+  const filterByTag = (tag: string) => {
+    setSelectedTag(selectedTag === tag ? null : tag);
   };
 
   if (!organization) return <div className="p-8">Loading...</div>;
@@ -423,7 +380,7 @@ const NotesContent = () => {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1">
+      <main className="flex-1 flex flex-col h-screen">
         {/* Top bar */}
         <header className="bg-white p-4 shadow-sm flex justify-between items-center sticky top-0 z-10">
           <div className="flex items-center">
@@ -433,18 +390,6 @@ const NotesContent = () => {
             <h1 className="text-xl font-bold text-indigo-800">Notes</h1>
           </div>
           <div className="flex items-center gap-4">
-            <div className="hidden md:flex">
-              <div className="relative mr-4">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
-                <Input 
-                  type="search" 
-                  placeholder="Search notes..." 
-                  className="pl-8 w-64 bg-gray-50 border-gray-200" 
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-            </div>
             <div className="text-sm text-gray-600 hidden md:block">{userEmail}</div>
             <Button variant="outline" size="sm" onClick={handleLogout}>
               <LogOut className="h-4 w-4 mr-2" /> Logout
@@ -453,275 +398,287 @@ const NotesContent = () => {
         </header>
 
         {/* Notes content */}
-        <div className="p-6">
-          <div className="mb-6">
-            <Button 
-              variant="outline" 
-              onClick={() => navigate("/dashboard")} 
-              className="mb-4"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard
-            </Button>
+        <div className="flex flex-1 overflow-hidden">
+          {/* Notes list sidebar */}
+          <div className="w-64 border-r border-gray-200 flex flex-col bg-white">
+            <div className="p-4 border-b border-gray-200">
+              <Button 
+                variant="outline" 
+                onClick={() => navigate("/dashboard")} 
+                className="mb-4 w-full"
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" /> Back
+              </Button>
+              <Button 
+                onClick={createNewNote}
+                className="w-full bg-indigo-600 hover:bg-indigo-700 mb-3"
+              >
+                <Plus className="mr-2 h-4 w-4" /> New Note
+              </Button>
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+                <Input 
+                  type="search" 
+                  placeholder="Search notes..." 
+                  className="pl-8 bg-gray-50 border-gray-200" 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+            </div>
             
-            <div className="flex flex-wrap justify-between items-start mb-6">
-              <div>
-                <h1 className="text-3xl font-bold text-indigo-800">Notes</h1>
-                <p className="text-gray-500">Organize your thoughts and ideas</p>
+            {/* Tags filter */}
+            {allTags.length > 0 && (
+              <div className="p-3 border-b border-gray-200">
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                  Filter by tag
+                </h3>
+                <div className="flex flex-wrap gap-1">
+                  {allTags.map(tag => (
+                    <Button
+                      key={tag}
+                      variant="outline"
+                      size="sm"
+                      className={`text-xs py-0 h-6 ${selectedTag === tag ? 'bg-indigo-100 border-indigo-300' : ''}`}
+                      onClick={() => filterByTag(tag)}
+                    >
+                      {tag}
+                    </Button>
+                  ))}
+                </div>
               </div>
-              
-              <div className="flex flex-wrap gap-3 mt-4 md:mt-0">
-                <Button 
-                  onClick={createNote}
-                  className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700"
-                >
-                  <PlusCircle className="mr-2 h-5 w-5" /> New Note
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="gap-2"
-                  onClick={() => {
-                    // Generate note with AI suggestion - simulated
-                    const aiSuggestion: Note = {
-                      id: crypto.randomUUID(),
-                      title: "AI Generated Meeting Notes",
-                      content: "# Meeting Summary\n\n## Key Points\n- Discussed Q2 objectives\n- Reviewed current project status\n- Assigned new tasks\n\n## Action Items\n- [ ] Follow up with clients\n- [ ] Prepare presentation\n- [ ] Schedule next meeting",
-                      createdAt: new Date().toISOString(),
-                      updatedAt: new Date().toISOString(),
-                      tags: ["ai", "meeting"],
-                      projectId: null,
-                      isFavorite: false,
-                      color: "bg-indigo-100"
-                    };
-                    
-                    const updatedNotes = [aiSuggestion, ...notes];
-                    setNotes(updatedNotes);
-                    localStorage.setItem("notes", JSON.stringify(updatedNotes));
-                    
-                    toast({
-                      title: "AI Note Created",
-                      description: "Generated a new note with AI suggestions."
-                    });
-                  }}
-                >
-                  <BrainCircuit className="h-5 w-5" /> AI Suggestions
-                </Button>
-              </div>
+            )}
+            
+            {/* Notes list */}
+            <div className="flex-1 overflow-y-auto">
+              {filteredNotes.length > 0 ? (
+                <ul className="divide-y divide-gray-200">
+                  {filteredNotes.map(note => (
+                    <li key={note.id}>
+                      <button
+                        onClick={() => viewNote(note)}
+                        className={`w-full text-left p-3 hover:bg-gray-50 ${
+                          activeNote?.id === note.id ? 'bg-indigo-50' : ''
+                        }`}
+                      >
+                        <h3 className="font-medium text-gray-900 truncate">{note.title}</h3>
+                        <p className="text-sm text-gray-500 truncate mt-1">
+                          {note.content.substring(0, 60)}...
+                        </p>
+                        <div className="flex items-center justify-between mt-2">
+                          <div className="flex flex-wrap gap-1">
+                            {note.tags.slice(0, 2).map(tag => (
+                              <span key={tag} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                {tag}
+                              </span>
+                            ))}
+                            {note.tags.length > 2 && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                +{note.tags.length - 2}
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-xs text-gray-500">{note.lastEdited}</span>
+                        </div>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="p-8 text-center">
+                  <BookOpen className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500">No notes found</p>
+                  <Button
+                    onClick={createNewNote}
+                    variant="link"
+                    className="mt-2 text-indigo-600"
+                  >
+                    Create your first note
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Notes list section */}
-            <div className="md:col-span-1">
-              <Card>
-                <CardHeader className="pb-3">
-                  <div className="flex justify-between items-center">
-                    <CardTitle>My Notes</CardTitle>
-                    <span className="text-sm text-gray-500">{notes.length} notes</span>
-                  </div>
-                </CardHeader>
-                <CardContent className="pb-0">
-                  <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
-                    <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="all">All Notes</TabsTrigger>
-                      <TabsTrigger value="favorites">Favorites</TabsTrigger>
-                    </TabsList>
-                  </Tabs>
-                  
-                  <div className="relative my-3">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
-                    <Input 
-                      type="search" 
-                      placeholder="Search notes..." 
-                      className="pl-8 bg-gray-50 border-gray-200" 
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </div>
-                  
-                  <div className="max-h-[600px] overflow-y-auto pr-2">
-                    {filteredNotes().length > 0 ? (
-                      <div className="space-y-2">
-                        {filteredNotes().map(note => (
-                          <div 
-                            key={note.id} 
-                            className={`p-3 rounded-md cursor-pointer border transition-colors ${
-                              editingNote && editingNote.id === note.id 
-                                ? 'border-indigo-500 bg-indigo-50' 
-                                : 'border-gray-200 hover:border-gray-300'
-                            } ${note.color}`}
-                            onClick={() => startEditing(note)}
-                          >
-                            <div className="flex justify-between items-start">
-                              <h3 className="font-medium">{note.title}</h3>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-7 w-7" 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  toggleFavorite(note.id);
-                                }}
-                              >
-                                <Star 
-                                  className={`h-4 w-4 ${note.isFavorite ? 'text-amber-500 fill-amber-500' : 'text-gray-400'}`} 
-                                />
-                              </Button>
-                            </div>
-                            <p className="text-sm text-gray-500 line-clamp-2 mt-1">{note.content}</p>
-                            {note.tags.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-2">
-                                {note.tags.map(tag => (
-                                  <span 
-                                    key={tag} 
-                                    className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full"
-                                  >
-                                    {tag}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
-                            <div className="text-xs text-gray-400 mt-2">
-                              Updated {new Date(note.updatedAt).toLocaleDateString()}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+          {/* Note editor/viewer */}
+          <div className="flex-1 flex flex-col overflow-hidden">
+            {activeNote || editMode ? (
+              <>
+                {/* Note header */}
+                <div className={`p-4 border-b border-gray-200 flex justify-between items-center ${noteColor}`}>
+                  <div className="flex-1">
+                    {editMode ? (
+                      <Input
+                        value={noteTitle}
+                        onChange={(e) => setNoteTitle(e.target.value)}
+                        className="font-bold text-lg border-0 bg-transparent focus-visible:ring-0 px-0 h-auto"
+                        placeholder="Note title"
+                      />
                     ) : (
-                      <div className="text-center py-8">
-                        <BookOpen className="h-12 w-12 text-gray-300 mx-auto mb-2" />
-                        <p className="text-lg font-medium">No notes found</p>
-                        <p className="text-sm text-gray-500 mb-4">
-                          {searchTerm 
-                            ? "Try a different search term" 
-                            : activeTab === "favorites" 
-                              ? "You haven't marked any notes as favorites yet" 
-                              : "Create your first note to get started"
-                          }
-                        </p>
-                        {!searchTerm && (
-                          <Button onClick={createNote}>
-                            <PlusCircle className="mr-2 h-5 w-5" /> New Note
+                      <h2 className="text-xl font-bold">{noteTitle}</h2>
+                    )}
+                    <div className="text-sm text-gray-500">
+                      {activeNote && `Last edited: ${activeNote.lastEdited}`}
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    {editMode ? (
+                      <>
+                        <div className="relative">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setIsColorPickerOpen(!isColorPickerOpen)}
+                            className="gap-1"
+                          >
+                            Color <ChevronDown className="h-4 w-4" />
                           </Button>
+                          {isColorPickerOpen && (
+                            <div className="absolute right-0 mt-1 w-40 bg-white rounded-md shadow-lg p-2 z-10 border border-gray-200">
+                              {noteColors.map(color => (
+                                <button
+                                  key={color.value}
+                                  className={`w-full text-left px-3 py-2 rounded-md ${color.value} hover:bg-gray-100`}
+                                  onClick={() => {
+                                    setNoteColor(color.value);
+                                    setIsColorPickerOpen(false);
+                                  }}
+                                >
+                                  {color.name}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <Button
+                          onClick={saveNote}
+                          size="sm"
+                          className="bg-indigo-600 hover:bg-indigo-700"
+                        >
+                          Save
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={editNote}
+                          className="gap-1"
+                        >
+                          <Edit className="h-4 w-4" /> Edit
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={deleteNote}
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Note content */}
+                <div className={`flex-1 overflow-y-auto p-4 ${noteColor}`}>
+                  {editMode ? (
+                    <Textarea
+                      value={noteContent}
+                      onChange={(e) => setNoteContent(e.target.value)}
+                      className="min-h-[500px] border-0 bg-transparent focus-visible:ring-0 p-0 resize-none"
+                      placeholder="Write your note here... (Markdown is supported)"
+                    />
+                  ) : (
+                    <div className="prose max-w-none">
+                      {noteContent.split('\n').map((line, i) => (
+                        <div key={i} className="mb-2">
+                          {line.startsWith('# ') ? (
+                            <h1 className="text-2xl font-bold">{line.substring(2)}</h1>
+                          ) : line.startsWith('## ') ? (
+                            <h2 className="text-xl font-bold">{line.substring(3)}</h2>
+                          ) : line.startsWith('### ') ? (
+                            <h3 className="text-lg font-bold">{line.substring(4)}</h3>
+                          ) : line.startsWith('- ') ? (
+                            <div className="flex">
+                              <span className="mr-2">•</span>
+                              <span>{line.substring(2)}</span>
+                            </div>
+                          ) : line.match(/^\d+\.\s/) ? (
+                            <div className="flex">
+                              <span className="mr-2">{line.match(/^\d+/)?.[0]}.</span>
+                              <span>{line.replace(/^\d+\.\s/, '')}</span>
+                            </div>
+                          ) : (
+                            <p>{line}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Tags */}
+                <div className={`border-t border-gray-200 p-4 ${noteColor}`}>
+                  <div className="flex items-center flex-wrap gap-2">
+                    <span className="text-sm font-medium text-gray-700">Tags:</span>
+                    {noteTags.map(tag => (
+                      <div key={tag} className="flex items-center bg-gray-100 rounded-full px-3 py-1 text-sm">
+                        {tag}
+                        {editMode && (
+                          <button
+                            onClick={() => removeTag(tag)}
+                            className="ml-1 text-gray-500 hover:text-gray-700"
+                          >
+                            &times;
+                          </button>
                         )}
+                      </div>
+                    ))}
+                    
+                    {editMode && (
+                      <div className="flex">
+                        <Input
+                          value={newTag}
+                          onChange={(e) => setNewTag(e.target.value)}
+                          placeholder="Add tag"
+                          className="h-8 w-32 text-sm"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              addTag();
+                            }
+                          }}
+                        />
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={addTag}
+                          className="h-8 ml-1"
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
                       </div>
                     )}
                   </div>
-                </CardContent>
-              </Card>
-            </div>
-            
-            {/* Note editor section */}
-            <div className="md:col-span-2">
-              {editingNote ? (
-                <Card className={`${tempNoteColor} h-full flex flex-col`}>
-                  <CardHeader className="pb-2">
-                    <div className="flex justify-between">
-                      <Input 
-                        value={tempNoteTitle} 
-                        onChange={(e) => setTempNoteTitle(e.target.value)}
-                        className="text-lg font-bold bg-transparent border-0 p-0 h-auto focus-visible:ring-0"
-                        placeholder="Note title"
-                      />
-                      <div className="flex space-x-1">
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => toggleFavorite(editingNote.id)}
-                        >
-                          <Star 
-                            className={`h-5 w-5 ${editingNote.isFavorite ? 'text-amber-500 fill-amber-500' : 'text-gray-400'}`} 
-                          />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => deleteNote(editingNote.id)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <Trash2 className="h-5 w-5" />
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <div className="text-xs text-gray-500">
-                        Created: {formatDate(editingNote.createdAt)}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        Updated: {formatDate(editingNote.updatedAt)}
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="flex-1 flex flex-col">
-                    <div className="border-t border-b border-gray-200 py-2 flex flex-wrap gap-2 my-2">
-                      <div className="flex items-center">
-                        <Button variant="ghost" size="sm" onClick={addTag} className="h-8 px-2">
-                          <Tag className="h-4 w-4 mr-2" /> Add Tag
-                        </Button>
-                      </div>
-                      
-                      {editingNote.tags.map(tag => (
-                        <span 
-                          key={tag} 
-                          className="flex items-center bg-gray-100 text-gray-800 text-sm px-2 py-1 rounded-full"
-                        >
-                          {tag}
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-4 w-4 ml-1 hover:bg-gray-200 rounded-full" 
-                            onClick={() => removeTag(tag)}
-                          >
-                            <span className="text-xs">×</span>
-                          </Button>
-                        </span>
-                      ))}
-                    </div>
-                    
-                    <div className="flex-1 flex flex-col">
-                      <Textarea 
-                        value={tempNoteContent} 
-                        onChange={(e) => setTempNoteContent(e.target.value)}
-                        className="flex-1 bg-transparent border-0 p-0 focus-visible:ring-0 resize-none min-h-[300px]"
-                        placeholder="Write your note here..."
-                      />
-                    </div>
-                  </CardContent>
-                  <CardFooter className="border-t border-gray-200 pt-3 flex justify-between">
-                    <div className="flex flex-wrap gap-1">
-                      {noteColors.map(color => (
-                        <button
-                          key={color.value}
-                          className={`w-6 h-6 rounded-full ${color.value} border ${
-                            tempNoteColor === color.value ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-gray-300'
-                          }`}
-                          title={color.name}
-                          onClick={() => setTempNoteColor(color.value)}
-                        />
-                      ))}
-                    </div>
-                    <div className="space-x-2">
-                      <Button variant="outline" size="sm" className="gap-2">
-                        <Share2 className="h-4 w-4" /> Share
-                      </Button>
-                      <Button onClick={saveNote}>
-                        Save Note
-                      </Button>
-                    </div>
-                  </CardFooter>
-                </Card>
-              ) : (
-                <Card className="h-full flex items-center justify-center">
-                  <CardContent className="text-center py-12">
-                    <Bookmark className="h-16 w-16 text-indigo-200 mx-auto mb-4" />
-                    <h2 className="text-xl font-bold mb-2">No note selected</h2>
-                    <p className="text-gray-500 mb-6">Select a note to view and edit, or create a new one</p>
-                    <Button onClick={createNote}>
-                      <PlusCircle className="mr-2 h-5 w-5" /> Create a New Note
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+                </div>
+              </>
+            ) : (
+              <div className="flex-1 flex items-center justify-center">
+                <div className="text-center p-8">
+                  <BookOpen className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-700">No note selected</h3>
+                  <p className="text-gray-500 mb-4">Select a note from the sidebar or create a new one</p>
+                  <Button
+                    onClick={createNewNote}
+                    className="bg-indigo-600 hover:bg-indigo-700"
+                  >
+                    <Plus className="mr-2 h-5 w-5" /> Create New Note
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </main>
