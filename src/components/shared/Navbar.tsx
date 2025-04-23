@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { IoIosArrowDown } from "react-icons/io";
 import { HiOutlineMenu, HiX } from "react-icons/hi";
 import { useNavigate } from "react-router-dom";
+import { useTheme } from "@/context/ThemeContext";
 
 const Navbar: React.FC = () => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -13,7 +14,7 @@ const Navbar: React.FC = () => {
   };
 
   return (
-    <div className="flex items-center justify-between px-6 md:px-14 py-4 bg-white text-black relative">
+    <div className="flex items-center justify-between px-6 md:px-14 py-4 bg-white text-black relative dark:bg-slate-900 dark:text-white">
       <div
         className="text-3xl md:text-4xl cursor-pointer"
         onClick={() => navigate("/")}
@@ -48,7 +49,7 @@ const Navbar: React.FC = () => {
       <div className="hidden md:flex items-center space-x-4">
         <button
           onClick={handleGetStarted}
-          className="px-6 py-2 border border-black rounded-full bg-white text-black font-medium transition-all hover:bg-gray-100"
+          className="px-6 py-2 border border-black rounded-full bg-white text-black font-medium transition-all hover:bg-gray-100 dark:border-white dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700"
         >
           Login / Sign Up
         </button>
@@ -56,7 +57,7 @@ const Navbar: React.FC = () => {
 
       {/* Mobile Dropdown Menu */}
       {menuOpen && (
-        <div className="absolute top-full left-0 w-full bg-white z-10 shadow-md flex flex-col items-center space-y-4 py-6 md:hidden">
+        <div className="absolute top-full left-0 w-full bg-white z-10 shadow-md flex flex-col items-center space-y-4 py-6 md:hidden dark:bg-slate-800">
           {["about", "features", "pricing", "wall of love"].map(
             (item, index) => (
               <div key={index} className="text-lg cursor-pointer">
@@ -66,7 +67,7 @@ const Navbar: React.FC = () => {
           )}
           <button
             onClick={handleGetStarted}
-            className="px-6 py-2 border border-black rounded-full bg-white text-black font-medium"
+            className="px-6 py-2 border border-black rounded-full bg-white text-black font-medium dark:border-white dark:bg-slate-800 dark:text-white"
           >
             Login / Sign Up
           </button>

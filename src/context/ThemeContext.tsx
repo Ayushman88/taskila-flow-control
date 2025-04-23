@@ -14,19 +14,25 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Check localStorage or system preference for initial theme
   const getInitialTheme = (): Theme => {
-    const savedTheme = localStorage.getItem("theme") as Theme | null;
-    if (savedTheme && (savedTheme === "light" || savedTheme === "dark")) {
-      return savedTheme;
+    if (typeof window !== "undefined") {
+      const savedTheme = localStorage.getItem("theme") as Theme | null;
+      if (savedTheme && (savedTheme === "light" || savedTheme === "dark")) {
+        return savedTheme;
+      }
+      
+      // Check system preference
+      return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
     }
     
-    // Check system preference
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    return "light"; // Default fallback
   };
 
   const [theme, setThemeState] = useState<Theme>(getInitialTheme);
 
   const setTheme = (theme: Theme) => {
-    localStorage.setItem("theme", theme);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("theme", theme);
+    }
     setThemeState(theme);
   };
 
@@ -36,9 +42,11 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Apply theme to document when it changes
   useEffect(() => {
-    const root = window.document.documentElement;
-    root.classList.remove("light", "dark");
-    root.classList.add(theme);
+    if (typeof window !== "undefined") {
+      const root = window.document.documentElement;
+      root.classList.remove("light", "dark");
+      root.classList.add(theme);
+    }
   }, [theme]);
 
   return (

@@ -1,4 +1,3 @@
-
 "use client";
 import React from 'react';
 import CountUp from "react-countup";
@@ -9,10 +8,10 @@ interface StatCounterProps {
 
 const StatCounter: React.FC<StatCounterProps> = ({ end }) => {
   return (
-    <CountUp
+    <CountUp 
       start={0}
       end={end}
-      duration={2}
+      duration={2.5}
       separator=","
       className="text-7xl font-semibold"
     />
@@ -21,7 +20,7 @@ const StatCounter: React.FC<StatCounterProps> = ({ end }) => {
 
 const Bento: React.FC = () => {
   return (
-    <div className="min-h-screen p-10 pt-20 flex flex-col gap-10 bg-white">
+    <div className="min-h-screen p-10 pt-20 flex flex-col gap-10 bg-white dark:bg-slate-900 dark:text-white">
       {/* Top Section */}
       <div className="flex flex-row gap-4">
         {/* Left Side */}

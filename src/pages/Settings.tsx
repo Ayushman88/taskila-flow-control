@@ -53,7 +53,6 @@ const SettingsContent = () => {
   const [activeTab, setActiveTab] = useState("profile");
   const { theme, toggleTheme } = useTheme();
   
-  // User profile form state
   const [name, setName] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [timezone, setTimezone] = useState("");
@@ -61,18 +60,15 @@ const SettingsContent = () => {
   const [dateFormat, setDateFormat] = useState("");
   const [timeFormat, setTimeFormat] = useState("");
   
-  // Notification settings
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [taskReminders, setTaskReminders] = useState(true);
   const [teamUpdates, setTeamUpdates] = useState(true);
   const [weeklyDigest, setWeeklyDigest] = useState(false);
   
-  // Appearance settings
   const [darkMode, setDarkMode] = useState(theme === "dark");
   const [compactView, setCompactView] = useState(false);
   const [animationsEnabled, setAnimationsEnabled] = useState(true);
   
-  // Security settings
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -90,7 +86,6 @@ const SettingsContent = () => {
   };
 
   useEffect(() => {
-    // Check if user is logged in
     const userStr = localStorage.getItem("user");
     if (!userStr) {
       navigate("/signin");
@@ -889,11 +884,9 @@ const SettingsContent = () => {
 };
 
 const Settings = () => (
-  <ThemeProvider>
-    <TaskProvider>
-      <SettingsContent />
-    </TaskProvider>
-  </ThemeProvider>
+  <TaskProvider>
+    <SettingsContent />
+  </TaskProvider>
 );
 
 export default Settings;
