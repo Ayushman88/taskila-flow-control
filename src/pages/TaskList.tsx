@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { TaskProvider, useTaskContext, Task } from "@/context/TaskContext";
@@ -41,6 +40,7 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { v4 as uuidv4 } from 'uuid';
+import Sidebar from "@/components/dashboard/Sidebar";
 
 interface Organization {
   name: string;
@@ -48,7 +48,6 @@ interface Organization {
   plan: string;
 }
 
-// The main Task List content
 const TaskListContent = () => {
   const navigate = useNavigate();
   const [organization, setOrganization] = useState<Organization | null>(null);
@@ -62,7 +61,6 @@ const TaskListContent = () => {
   const [sortField, setSortField] = useState<keyof Task | "">("");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   
-  // New task form state
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newTaskDescription, setNewTaskDescription] = useState("");
   const [newTaskPriority, setNewTaskPriority] = useState<"Low" | "Medium" | "High">("Medium");
@@ -78,9 +76,7 @@ const TaskListContent = () => {
     deleteTask
   } = useTaskContext();
 
-  // Initialize form values on mount
   useEffect(() => {
-    // Check if user is logged in
     const userStr = localStorage.getItem("user");
     if (!userStr) {
       navigate("/signin");
@@ -90,44 +86,35 @@ const TaskListContent = () => {
     const user = JSON.parse(userStr);
     setUserEmail(user.email);
     
-    // Get organization data
     const orgStr = localStorage.getItem("organization");
     if (orgStr) {
       setOrganization(JSON.parse(orgStr));
     }
 
-    // Initialize the new task due date to tomorrow
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     setNewTaskDueDate(tomorrow.toISOString().split('T')[0]);
 
-    // Set default project if available
     if (projects.length > 0) {
       setNewTaskProject(projects[0].id);
     }
   }, [navigate, projects]);
   
-  // Filter tasks based on search and filters
   const filteredTasks = tasks.filter(task => {
-    // Search filter
     const searchFilter = searchQuery 
       ? task.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
         task.description.toLowerCase().includes(searchQuery.toLowerCase())
       : true;
     
-    // Project filter
     const projectFilter = selectedProject === "all" || task.projectId === selectedProject;
     
-    // Status filter
     const statusFilter = selectedStatus === "all" || task.status === selectedStatus;
     
-    // Priority filter
     const priorityFilter = selectedPriority === "all" || task.priority === selectedPriority;
     
     return searchFilter && projectFilter && statusFilter && priorityFilter;
   });
 
-  // Sort tasks
   const sortedTasks = [...filteredTasks].sort((a, b) => {
     if (!sortField) return 0;
     
@@ -209,7 +196,6 @@ const TaskListContent = () => {
 
     addTask(newTask);
     
-    // Reset form
     setNewTaskTitle("");
     setNewTaskDescription("");
     setNewTaskPriority("Medium");
@@ -270,81 +256,14 @@ const TaskListContent = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar - hidden on mobile unless toggled */}
-      <aside className={`${isMenuOpen ? 'block' : 'hidden'} md:block w-64 bg-gradient-to-b from-indigo-800 to-purple-900 text-white fixed md:static h-screen z-50 transition-all duration-300 ease-in-out`}>
-        <div className="p-4 border-b border-indigo-700">
-          <h2 className="text-xl font-bold">{organization.name}</h2>
-          <p className="text-sm text-indigo-200">{organization.plan} Plan</p>
-        </div>
-        <nav className="p-2">
-          <ul className="space-y-1">
-            <li>
-              <Link to="/dashboard" className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors">
-                <BarChart2 className="h-5 w-5" />
-                <span>Dashboard</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/kanban" className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors">
-                <KanbanSquare className="h-5 w-5" />
-                <span>Kanban Board</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/gantt" className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors">
-                <GanttChartSquare className="h-5 w-5" />
-                <span>Gantt Chart</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/tasks" className="flex items-center space-x-3 px-3 py-2 rounded-md bg-indigo-700 text-white font-medium">
-                <List className="h-5 w-5" />
-                <span>Task List</span>
-              </Link>
-            </li>
-            <li>
-              <a href="#" className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors">
-                <Clock className="h-5 w-5" />
-                <span>Time Tracking</span>
-              </a>
-            </li>
-            <li>
-              <a href="#" className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors">
-                <FileText className="h-5 w-5" />
-                <span>Files & Docs</span>
-              </a>
-            </li>
-            <li>
-              <a href="#" className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors">
-                <MessageSquare className="h-5 w-5" />
-                <span>Chat</span>
-              </a>
-            </li>
-            <li>
-              <a href="#" className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors">
-                <BookOpen className="h-5 w-5" />
-                <span>Notes</span>
-              </a>
-            </li>
-            <li>
-              <a href="#" className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors">
-                <Users className="h-5 w-5" />
-                <span>Team</span>
-              </a>
-            </li>
-            <li>
-              <a href="#" className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors">
-                <Settings className="h-5 w-5" />
-                <span>Settings</span>
-              </a>
-            </li>
-          </ul>
-        </nav>
-      </aside>
+      <Sidebar 
+        organization={organization} 
+        isMenuOpen={isMenuOpen} 
+        toggleMenu={toggleMenu}
+        handleLogout={handleLogout}
+      />
 
-      {/* Main content */}
       <main className="flex-1">
-        {/* Top bar */}
         <header className="bg-white p-4 shadow-sm flex justify-between items-center sticky top-0 z-10">
           <div className="flex items-center">
             <Button variant="ghost" size="icon" onClick={toggleMenu} className="md:hidden mr-2">
@@ -372,7 +291,6 @@ const TaskListContent = () => {
           </div>
         </header>
 
-        {/* Task list content */}
         <div className="p-6">
           <div className="flex flex-wrap justify-between items-center mb-6">
             <div className="space-y-1 mb-4 md:mb-0">
@@ -490,7 +408,6 @@ const TaskListContent = () => {
                 </DialogContent>
               </Dialog>
               
-              {/* Filters */}
               <div className="flex flex-wrap gap-2 w-full md:w-auto">
                 <Select value={selectedProject} onValueChange={setSelectedProject}>
                   <SelectTrigger className="w-full md:w-40 h-10">
@@ -532,7 +449,6 @@ const TaskListContent = () => {
             </div>
           </div>
 
-          {/* Mobile search */}
           <div className="block md:hidden mb-4">
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
@@ -546,7 +462,6 @@ const TaskListContent = () => {
             </div>
           </div>
 
-          {/* Task table */}
           <Card className="overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -661,11 +576,13 @@ const TaskListContent = () => {
                           <List className="h-12 w-12 text-gray-300 mb-2" />
                           <p className="text-lg font-medium">No tasks found</p>
                           <p className="text-sm mb-4">Try adjusting your search or filters</p>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" onClick={() => setIsNewTaskDialogOpen(true)}>
-                              <PlusCircle className="mr-2 h-4 w-4" /> Create a new task
-                            </Button>
-                          </DialogTrigger>
+                          <Dialog open={isNewTaskDialogOpen} onOpenChange={setIsNewTaskDialogOpen}>
+                            <DialogTrigger asChild>
+                              <Button variant="outline">
+                                <PlusCircle className="mr-2 h-4 w-4" /> Create a new task
+                              </Button>
+                            </DialogTrigger>
+                          </Dialog>
                         </div>
                       </td>
                     </tr>
@@ -680,7 +597,6 @@ const TaskListContent = () => {
   );
 };
 
-// Wrap the Task List content with the TaskProvider
 const TaskList = () => (
   <TaskProvider>
     <TaskListContent />
