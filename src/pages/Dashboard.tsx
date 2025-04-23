@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -38,6 +37,7 @@ import InviteTeamModal from "@/components/dashboard/InviteTeamModal";
 import ScheduleMeetingModal from "@/components/dashboard/ScheduleMeetingModal";
 import CreateWhiteboardModal from "@/components/dashboard/CreateWhiteboardModal";
 import CreateDocumentModal from "@/components/dashboard/CreateDocumentModal";
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
 
 interface Organization {
   name: string;
@@ -104,227 +104,125 @@ const DashboardContent = () => {
   if (!organization) return <div className="p-8">Loading...</div>;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar - hidden on mobile unless toggled */}
-      <aside className={`${isMenuOpen ? 'block' : 'hidden'} md:block w-64 bg-gradient-to-b from-indigo-800 to-purple-900 text-white fixed md:static h-screen z-50 transition-all duration-300 ease-in-out`}>
-        <div className="p-4 border-b border-indigo-700">
-          <h2 className="text-xl font-bold">{organization.name}</h2>
-          <p className="text-sm text-indigo-200">{organization.plan} Plan</p>
+    <DashboardLayout>
+      <div className="p-6">
+        {/* Create new button row */}
+        <div className="mb-6 flex flex-wrap gap-3">
+          <Button 
+            onClick={() => setCreateProjectOpen(true)}
+            className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700"
+          >
+            <PlusCircle className="mr-2 h-5 w-5" /> Create New Project
+          </Button>
+          <Link to="/tasks">
+            <Button variant="outline" className="border-indigo-200 text-indigo-700">
+              <PlusCircle className="mr-2 h-5 w-5" /> Create Task
+            </Button>
+          </Link>
+          <Button 
+            variant="outline" 
+            className="border-indigo-200 text-indigo-700"
+            onClick={() => setUploadFileOpen(true)}
+          >
+            <FileUp className="mr-2 h-5 w-5" /> Upload File
+          </Button>
+          <Button 
+            variant="outline" 
+            className="border-indigo-200 text-indigo-700"
+            onClick={() => setInviteTeamOpen(true)}
+          >
+            <Users className="mr-2 h-5 w-5" /> Invite Team Member
+          </Button>
         </div>
-        <nav className="p-2">
-          <ul className="space-y-1">
-            <li>
-              <Link to="/dashboard" className="flex items-center space-x-3 px-3 py-2 rounded-md bg-indigo-700 text-white font-medium">
-                <BarChart2 className="h-5 w-5" />
-                <span>Dashboard</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/kanban" className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors">
-                <KanbanSquare className="h-5 w-5" />
-                <span>Kanban Board</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/gantt" className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors">
-                <GanttChartSquare className="h-5 w-5" />
-                <span>Gantt Chart</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/tasks" className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors">
-                <List className="h-5 w-5" />
-                <span>Task List</span>
-              </Link>
-            </li>
-            <li>
-              <a href="#" className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors">
-                <Clock className="h-5 w-5" />
-                <span>Time Tracking</span>
-              </a>
-            </li>
-            <li>
-              <a href="#" className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors">
-                <FileText className="h-5 w-5" />
-                <span>Files & Docs</span>
-              </a>
-            </li>
-            <li>
-              <a href="#" className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors">
-                <MessageSquare className="h-5 w-5" />
-                <span>Chat</span>
-              </a>
-            </li>
-            <li>
-              <a href="#" className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors">
-                <BookOpen className="h-5 w-5" />
-                <span>Notes</span>
-              </a>
-            </li>
-            <li>
-              <a href="#" className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors">
-                <Users className="h-5 w-5" />
-                <span>Team</span>
-              </a>
-            </li>
-            <li>
-              <a href="#" className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors">
-                <Settings className="h-5 w-5" />
-                <span>Settings</span>
-              </a>
-            </li>
-          </ul>
-        </nav>
-      </aside>
 
-      {/* Main content */}
-      <main className="flex-1">
-        {/* Top bar */}
-        <header className="bg-white p-4 shadow-sm flex justify-between items-center sticky top-0 z-10">
-          <div className="flex items-center">
-            <Button variant="ghost" size="icon" onClick={toggleMenu} className="md:hidden mr-2">
-              <Menu className="h-5 w-5" />
-            </Button>
-            <h1 className="text-xl font-bold text-indigo-800">Dashboard</h1>
+        {/* Overview section */}
+        <section className="mb-8">
+          <h2 className="text-2xl font-bold mb-4 text-indigo-800">Overview</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card className="border-l-4 border-l-blue-500 shadow-md hover:shadow-lg transition-shadow">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg text-blue-700 flex items-center">
+                  <List className="mr-2 h-5 w-5" /> Tasks
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold">{projects.reduce((acc, project) => {
+                  const projectTasks = projects.length;
+                  return acc + projectTasks;
+                }, 0)}</div>
+                <div className="text-gray-500 text-sm">Open tasks across all projects</div>
+              </CardContent>
+            </Card>
+            <Card className="border-l-4 border-l-purple-500 shadow-md hover:shadow-lg transition-shadow">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg text-purple-700 flex items-center">
+                  <FileText className="mr-2 h-5 w-5" /> Projects
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold">{projects.length}</div>
+                <div className="text-gray-500 text-sm">{projects.filter(p => p.status === "In Progress").length} active, {projects.filter(p => p.status === "To Do").length} in planning</div>
+              </CardContent>
+            </Card>
+            <Card className="border-l-4 border-l-green-500 shadow-md hover:shadow-lg transition-shadow">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg text-green-700 flex items-center">
+                  <Clock className="mr-2 h-5 w-5" /> Hours Logged
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold">24.5</div>
+                <div className="text-gray-500 text-sm">This week</div>
+              </CardContent>
+            </Card>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="hidden md:flex">
-              <div className="relative mr-4">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
-                <Input 
-                  type="search" 
-                  placeholder="Search..." 
-                  className="pl-8 w-64 bg-gray-50 border-gray-200" 
-                />
-              </div>
-            </div>
-            <div className="text-sm text-gray-600 hidden md:block">{userEmail}</div>
-            <Button variant="outline" size="sm" onClick={handleLogout}>
-              <LogOut className="h-4 w-4 mr-2" /> Logout
-            </Button>
-          </div>
-        </header>
+        </section>
 
-        {/* Dashboard content */}
-        <div className="p-6">
-          {/* Create new button row */}
-          <div className="mb-6 flex flex-wrap gap-3">
+        {/* Projects section */}
+        <section className="mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold text-indigo-800">Your Projects</h2>
             <Button 
+              variant="outline" 
+              size="sm" 
+              className="border-indigo-200 text-indigo-700"
               onClick={() => setCreateProjectOpen(true)}
-              className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700"
             >
-              <PlusCircle className="mr-2 h-5 w-5" /> Create New Project
-            </Button>
-            <Link to="/tasks">
-              <Button variant="outline" className="border-indigo-200 text-indigo-700">
-                <PlusCircle className="mr-2 h-5 w-5" /> Create Task
-              </Button>
-            </Link>
-            <Button 
-              variant="outline" 
-              className="border-indigo-200 text-indigo-700"
-              onClick={() => setUploadFileOpen(true)}
-            >
-              <FileUp className="mr-2 h-5 w-5" /> Upload File
-            </Button>
-            <Button 
-              variant="outline" 
-              className="border-indigo-200 text-indigo-700"
-              onClick={() => setInviteTeamOpen(true)}
-            >
-              <Users className="mr-2 h-5 w-5" /> Invite Team Member
+              <PlusCircle className="mr-2 h-4 w-4" /> New Project
             </Button>
           </div>
-
-          {/* Overview section */}
-          <section className="mb-8">
-            <h2 className="text-2xl font-bold mb-4 text-indigo-800">Overview</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="border-l-4 border-l-blue-500 shadow-md hover:shadow-lg transition-shadow">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {projects.map(project => (
+              <Card key={project.id} className="overflow-hidden border-none shadow-md hover:shadow-xl transition-shadow">
+                <div className={`h-2 w-full ${project.status === 'In Progress' ? 'bg-amber-500' : project.status === 'To Do' ? 'bg-blue-500' : 'bg-green-500'}`}></div>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-lg text-blue-700 flex items-center">
-                    <List className="mr-2 h-5 w-5" /> Tasks
+                  <CardTitle className="text-lg flex justify-between">
+                    <span>{project.name}</span>
+                    <div className="flex space-x-1">
+                      <button className="text-gray-400 hover:text-indigo-700">
+                        <Edit className="h-4 w-4" />
+                      </button>
+                      <button 
+                        className="text-gray-400 hover:text-red-500"
+                        onClick={() => handleDeleteProject(project.id, project.name)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                   </CardTitle>
+                  <CardDescription>{project.description}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{projects.reduce((acc, project) => {
-                    const projectTasks = projects.length;
-                    return acc + projectTasks;
-                  }, 0)}</div>
-                  <div className="text-gray-500 text-sm">Open tasks across all projects</div>
-                </CardContent>
-              </Card>
-              <Card className="border-l-4 border-l-purple-500 shadow-md hover:shadow-lg transition-shadow">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg text-purple-700 flex items-center">
-                    <FileText className="mr-2 h-5 w-5" /> Projects
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">{projects.length}</div>
-                  <div className="text-gray-500 text-sm">{projects.filter(p => p.status === "In Progress").length} active, {projects.filter(p => p.status === "To Do").length} in planning</div>
-                </CardContent>
-              </Card>
-              <Card className="border-l-4 border-l-green-500 shadow-md hover:shadow-lg transition-shadow">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg text-green-700 flex items-center">
-                    <Clock className="mr-2 h-5 w-5" /> Hours Logged
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">24.5</div>
-                  <div className="text-gray-500 text-sm">This week</div>
-                </CardContent>
-              </Card>
-            </div>
-          </section>
-
-          {/* Projects section */}
-          <section className="mb-8">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold text-indigo-800">Your Projects</h2>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="border-indigo-200 text-indigo-700"
-                onClick={() => setCreateProjectOpen(true)}
-              >
-                <PlusCircle className="mr-2 h-4 w-4" /> New Project
-              </Button>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {projects.map(project => (
-                <Card key={project.id} className="overflow-hidden border-none shadow-md hover:shadow-xl transition-shadow">
-                  <div className={`h-2 w-full ${project.status === 'In Progress' ? 'bg-amber-500' : project.status === 'To Do' ? 'bg-blue-500' : 'bg-green-500'}`}></div>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg flex justify-between">
-                      <span>{project.name}</span>
-                      <div className="flex space-x-1">
-                        <button className="text-gray-400 hover:text-indigo-700">
-                          <Edit className="h-4 w-4" />
-                        </button>
-                        <button 
-                          className="text-gray-400 hover:text-red-500"
-                          onClick={() => handleDeleteProject(project.id, project.name)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </CardTitle>
-                    <CardDescription>{project.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="mb-2">
-                      <div className="flex justify-between mb-1 text-sm">
-                        <span>Progress</span>
-                        <span>{project.progress}%</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2.5">
-                        <div 
-                          className="bg-gradient-to-r from-indigo-500 to-purple-600 h-2.5 rounded-full" 
-                          style={{ width: `${project.progress}%` }}
-                        ></div>
-                      </div>
+                  <div className="mb-2">
+                    <div className="flex justify-between mb-1 text-sm">
+                      <span>Progress</span>
+                      <span>{project.progress}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                      <div 
+                        className="bg-gradient-to-r from-indigo-500 to-purple-600 h-2.5 rounded-full" 
+                        style={{ width: `${project.progress}%` }}
+                      ></div>
                     </div>
                     <div className="flex justify-between text-sm text-gray-500">
                       <div>Due: {new Date(project.dueDate).toLocaleDateString()}</div>
@@ -346,7 +244,7 @@ const DashboardContent = () => {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+            ))}
               
               {/* Add new project card */}
               <Card 
@@ -526,39 +424,38 @@ const DashboardContent = () => {
             </div>
           </section>
         </div>
-      </main>
-
-      {/* Modals */}
-      <CreateProjectModal 
-        open={createProjectOpen} 
-        onOpenChange={setCreateProjectOpen} 
-      />
       
-      <UploadFileModal 
-        open={uploadFileOpen} 
-        onOpenChange={setUploadFileOpen} 
-      />
-      
-      <InviteTeamModal 
-        open={inviteTeamOpen} 
-        onOpenChange={setInviteTeamOpen} 
-      />
-      
-      <ScheduleMeetingModal 
-        open={scheduleMeetingOpen} 
-        onOpenChange={setScheduleMeetingOpen} 
-      />
-      
-      <CreateWhiteboardModal 
-        open={createWhiteboardOpen} 
-        onOpenChange={setCreateWhiteboardOpen} 
-      />
-      
-      <CreateDocumentModal 
-        open={createDocumentOpen} 
-        onOpenChange={setCreateDocumentOpen} 
-      />
-    </div>
+        {/* Modals */}
+        <CreateProjectModal 
+          open={createProjectOpen} 
+          onOpenChange={setCreateProjectOpen} 
+        />
+        
+        <UploadFileModal 
+          open={uploadFileOpen} 
+          onOpenChange={setUploadFileOpen} 
+        />
+        
+        <InviteTeamModal 
+          open={inviteTeamOpen} 
+          onOpenChange={setInviteTeamOpen} 
+        />
+        
+        <ScheduleMeetingModal 
+          open={scheduleMeetingOpen} 
+          onOpenChange={setScheduleMeetingOpen} 
+        />
+        
+        <CreateWhiteboardModal 
+          open={createWhiteboardOpen} 
+          onOpenChange={setCreateWhiteboardOpen} 
+        />
+        
+        <CreateDocumentModal 
+          open={createDocumentOpen} 
+          onOpenChange={setCreateDocumentOpen} 
+        />
+      </DashboardLayout>
   );
 };
 
