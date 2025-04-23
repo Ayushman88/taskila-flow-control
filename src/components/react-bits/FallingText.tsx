@@ -1,9 +1,21 @@
+
 "use client";
 import React from "react";
 import { useRef, useState, useEffect } from "react";
 import Matter from "matter-js";
 
-const FallingElements = ({
+interface FallingElementsProps {
+  words?: string[];
+  trigger?: "auto" | "scroll";
+  backgroundColor?: string;
+  wireframes?: boolean;
+  gravity?: number;
+  mouseConstraintStiffness?: number;
+  fontSize?: string;
+  side?: "left" | "right";
+}
+
+const FallingElements: React.FC<FallingElementsProps> = ({
   words = [],
   trigger = "auto",
   backgroundColor = "transparent",
@@ -13,8 +25,8 @@ const FallingElements = ({
   fontSize = "2rem",
   side = "left", // "left" or "right"
 }) => {
-  const containerRef = useRef(null);
-  const canvasContainerRef = useRef(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const canvasContainerRef = useRef<HTMLDivElement>(null);
 
   const [effectStarted, setEffectStarted] = useState(false);
 
@@ -44,6 +56,8 @@ const FallingElements = ({
     const { Engine, Render, World, Bodies, Runner, Mouse, MouseConstraint } =
       Matter;
 
+    if (!containerRef.current) return;
+    
     const containerRect = containerRef.current.getBoundingClientRect();
     const width = containerRect.width;
     const height = containerRect.height;
@@ -54,7 +68,7 @@ const FallingElements = ({
     engine.world.gravity.y = gravity;
 
     const render = Render.create({
-      element: canvasContainerRef.current,
+      element: canvasContainerRef.current!,
       engine,
       options: {
         width,
@@ -97,7 +111,12 @@ const FallingElements = ({
       boundaryOptions
     );
 
-    const elements = words.map((word, index) => {
+    interface ElementWithBody {
+      word: string;
+      body: Matter.Body;
+    }
+
+    const elements: ElementWithBody[] = words.map((word, index) => {
       const x =
         side === "left"
           ? (Math.random() * width) / 3
@@ -175,6 +194,8 @@ const FallingElements = ({
     wireframes,
     backgroundColor,
     mouseConstraintStiffness,
+    words,
+    side,
   ]);
 
   return (
