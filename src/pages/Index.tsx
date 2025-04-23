@@ -1,4 +1,3 @@
-import React from "react";
 import Bento from "../components/home/Bento";
 import CallToAction from "../components/home/CallToAction";
 import TaskilaLayout from "../components/home/Features";

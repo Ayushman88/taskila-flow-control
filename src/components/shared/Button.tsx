@@ -1,7 +1,10 @@
 import React from "react";
 
-/** @jsxImportSource react */
-const Button = ({ label }) => {
+interface ButtonProps {
+  label: string;
+}
+
+const Button: React.FC<ButtonProps> = ({ label }) => {
   return (
     <button
       className="px-10 py-1 border border-black border-b-4 border-r-2 rounded-full bg-white text-black font-medium shadow-md transition-all duration-200 text-lg

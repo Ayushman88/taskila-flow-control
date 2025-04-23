@@ -1,4 +1,6 @@
-const Seamless = () => {
+import React from "react";
+
+const Seamless: React.FC = () => {
   return (
     <div className="bg-white max-h-screen">
       {/* Header Section */}
