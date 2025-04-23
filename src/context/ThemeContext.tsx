@@ -15,7 +15,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Check localStorage or system preference for initial theme
   const getInitialTheme = (): Theme => {
     const savedTheme = localStorage.getItem("theme") as Theme | null;
-    if (savedTheme) return savedTheme;
+    if (savedTheme && (savedTheme === "light" || savedTheme === "dark")) {
+      return savedTheme;
+    }
     
     // Check system preference
     return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
