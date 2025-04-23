@@ -1,23 +1,25 @@
+
+"use client";
 import React, { useState } from "react";
 
-type PlanFeature = {
+interface PlanFeature {
   text: string;
   included: boolean;
-};
+}
 
-type Plan = {
+interface Plan {
   type: string;
   name: string;
   price: string;
   description: string;
   features: PlanFeature[];
   buttonText: string;
-};
+}
 
-type PricingCardProps = {
+interface PricingCardProps {
   plan: Plan;
   isMiddle: boolean;
-};
+}
 
 const PricingCard: React.FC<PricingCardProps> = ({ plan, isMiddle }) => {
   const [isHovered, setIsHovered] = useState(false);
