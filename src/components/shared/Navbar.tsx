@@ -1,14 +1,15 @@
-
 import React, { useState } from "react";
 import { IoIosArrowDown } from "react-icons/io";
 import { HiOutlineMenu, HiX } from "react-icons/hi";
-import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 const Navbar: React.FC = () => {
   const [menuOpen, setMenuOpen] = useState(false);
-  const { user, login, logout } = useAuth();
   const navigate = useNavigate();
+
+  const handleGetStarted = () => {
+    navigate("/create-organization");
+  };
 
   return (
     <div className="flex items-center justify-between px-6 md:px-14 py-4 bg-white text-black relative">
@@ -44,30 +45,12 @@ const Navbar: React.FC = () => {
 
       {/* Authentication Buttons */}
       <div className="hidden md:flex items-center space-x-4">
-        {user ? (
-          <div className="flex items-center gap-2">
-            {user.photoURL && (
-              <img
-                src={user.photoURL}
-                alt="User"
-                className="w-10 h-10 rounded-full"
-              />
-            )}
-            <button
-              onClick={logout}
-              className="px-6 py-2 border border-black rounded-full bg-white text-black font-medium transition-all hover:bg-gray-100"
-            >
-              Logout
-            </button>
-          </div>
-        ) : (
-          <button
-            onClick={login}
-            className="px-6 py-2 border border-black rounded-full bg-white text-black font-medium transition-all hover:bg-gray-100"
-          >
-            Sign Up with Google
-          </button>
-        )}
+        <button
+          onClick={handleGetStarted}
+          className="px-6 py-2 border border-black rounded-full bg-white text-black font-medium transition-all hover:bg-gray-100"
+        >
+          Login / Sign Up
+        </button>
       </div>
 
       {/* Mobile Dropdown Menu */}
@@ -80,30 +63,12 @@ const Navbar: React.FC = () => {
               </div>
             )
           )}
-          {user ? (
-            <div className="flex items-center gap-2">
-              {user.photoURL && (
-                <img
-                  src={user.photoURL}
-                  alt="User"
-                  className="w-10 h-10 rounded-full"
-                />
-              )}
-              <button
-                onClick={logout}
-                className="px-6 py-2 border border-black rounded-full bg-white text-black font-medium transition-all hover:bg-gray-100"
-              >
-                Logout
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={login}
-              className="px-6 py-2 border border-black rounded-full bg-white text-black font-medium"
-            >
-              Sign Up
-            </button>
-          )}
+          <button
+            onClick={handleGetStarted}
+            className="px-6 py-2 border border-black rounded-full bg-white text-black font-medium"
+          >
+            Login / Sign Up
+          </button>
         </div>
       )}
     </div>

@@ -5,9 +5,9 @@ const Seamless: React.FC = () => {
     <div className="bg-white max-h-screen">
       {/* Header Section */}
       <div className="bg-[#D5D2FD] rounded-t-[100px] p-20 flex flex-col justify-center items-center">
-        <h1 className="text-6xl text-black z-10 text-center">
+        <h1 className="text-6xl text-black z-20 text-center">
           Experience the power of <br />
-          <span className="bg-white border border-black p-2 px-6 rounded-full -z-10">
+          <span className="bg-white border border-black p-0 px-2 rounded-full z-0">
             Seamless
           </span>{" "}
           Functionality
