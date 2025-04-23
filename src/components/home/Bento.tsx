@@ -1,4 +1,4 @@
-
+"use client";
 import React from 'react';
 import CountUp from "react-countup";
 
@@ -8,10 +8,9 @@ interface StatCounterProps {
 
 const StatCounter: React.FC<StatCounterProps> = ({ end }) => {
   return (
-    <CountUp
+    <CountUp 
       start={0}
       end={end}
-      decimals={0}
       duration={2.5}
       separator=","
       className="text-7xl font-semibold"
