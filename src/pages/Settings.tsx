@@ -9,36 +9,26 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { 
-  BarChart2, 
-  List, 
-  LogOut, 
-  Settings as SettingsIcon, 
-  Users,
-  Calendar,
-  FileText,
-  MessageSquare,
-  Search,
-  KanbanSquare,
-  GanttChartSquare,
-  BookOpen,
+  ArrowLeft,
   Menu,
-  Clock,
+  Save,
+  Upload,
   User,
   CreditCard,
   Lock,
   Bell,
-  Shield,
   Palette,
-  Upload,
-  Save,
-  ArrowLeft
+  Shield,
+  LogOut,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { TaskProvider, useTaskContext } from "@/context/TaskContext";
+import { useTheme } from "@/context/ThemeContext";
+import CommonSidebar from "@/components/common/Sidebar";
 
 interface Organization {
   name: string;
-  teamSize: string;
+  teamSize?: string;
   plan: string;
   billingCycle: string;
   nextBillingDate: string;
@@ -61,6 +51,7 @@ const SettingsContent = () => {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("profile");
+  const { theme, toggleTheme } = useTheme();
   
   // User profile form state
   const [name, setName] = useState("");
@@ -77,7 +68,7 @@ const SettingsContent = () => {
   const [weeklyDigest, setWeeklyDigest] = useState(false);
   
   // Appearance settings
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(theme === "dark");
   const [compactView, setCompactView] = useState(false);
   const [animationsEnabled, setAnimationsEnabled] = useState(true);
   
@@ -88,6 +79,15 @@ const SettingsContent = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   
   const { projects } = useTaskContext();
+
+  useEffect(() => {
+    setDarkMode(theme === "dark");
+  }, [theme]);
+
+  const handleDarkModeChange = (checked: boolean) => {
+    setDarkMode(checked);
+    toggleTheme();
+  };
 
   useEffect(() => {
     // Check if user is logged in
@@ -109,7 +109,6 @@ const SettingsContent = () => {
       timeFormat: userObj.timeFormat || "12-hour"
     });
     
-    // Initialize form state
     setName(userObj.name || userObj.email.split('@')[0]);
     setJobTitle(userObj.jobTitle || "Product Manager");
     setTimezone(userObj.timezone || "America/New_York");
@@ -117,12 +116,10 @@ const SettingsContent = () => {
     setDateFormat(userObj.dateFormat || "MM/DD/YYYY");
     setTimeFormat(userObj.timeFormat || "12-hour");
     
-    // Get organization data
     const orgStr = localStorage.getItem("organization");
     if (orgStr) {
       setOrganization(JSON.parse(orgStr));
     } else {
-      // Set a default organization if none exists to prevent errors
       setOrganization({
         name: "My Organization",
         teamSize: "1-10",
@@ -159,7 +156,6 @@ const SettingsContent = () => {
       timeFormat
     };
     
-    // Save to localStorage
     localStorage.setItem("user", JSON.stringify(updatedUser));
     setUser(updatedUser);
     
@@ -170,7 +166,6 @@ const SettingsContent = () => {
   };
 
   const saveNotificationSettings = () => {
-    // In a real app, we would update these on the server
     toast({
       title: "Notification Settings Saved",
       description: "Your notification preferences have been updated."
@@ -212,7 +207,6 @@ const SettingsContent = () => {
       return;
     }
     
-    // In a real app, we would verify the current password and update the password on the server
     setCurrentPassword("");
     setNewPassword("");
     setConfirmPassword("");
@@ -236,102 +230,32 @@ const SettingsContent = () => {
 
   if (!user || !organization) return <div className="p-8">Loading...</div>;
 
-  const projectsLength = projects && Array.isArray(projects) ? projects.length : 0;
-
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar - hidden on mobile unless toggled */}
-      <aside className={`${isMenuOpen ? 'block' : 'hidden'} md:block w-64 bg-gradient-to-b from-indigo-800 to-purple-900 text-white fixed md:static h-screen z-50 transition-all duration-300 ease-in-out`}>
-        <div className="p-4 border-b border-indigo-700">
-          <h2 className="text-xl font-bold">{organization.name}</h2>
-          <p className="text-sm text-indigo-200">{organization.plan} Plan</p>
-        </div>
-        <nav className="p-2">
-          <ul className="space-y-1">
-            <li>
-              <Link to="/dashboard" className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors">
-                <BarChart2 className="h-5 w-5" />
-                <span>Dashboard</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/kanban" className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors">
-                <KanbanSquare className="h-5 w-5" />
-                <span>Kanban Board</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/gantt" className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors">
-                <GanttChartSquare className="h-5 w-5" />
-                <span>Gantt Chart</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/tasks" className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors">
-                <List className="h-5 w-5" />
-                <span>Task List</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/time-tracking" className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors">
-                <Clock className="h-5 w-5" />
-                <span>Time Tracking</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/files" className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors">
-                <FileText className="h-5 w-5" />
-                <span>Files & Docs</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/chat" className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors">
-                <MessageSquare className="h-5 w-5" />
-                <span>Chat</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/notes" className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors">
-                <BookOpen className="h-5 w-5" />
-                <span>Notes</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/team" className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors">
-                <Users className="h-5 w-5" />
-                <span>Team</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/settings" className="flex items-center space-x-3 px-3 py-2 rounded-md bg-indigo-700 text-white font-medium">
-                <SettingsIcon className="h-5 w-5" />
-                <span>Settings</span>
-              </Link>
-            </li>
-          </ul>
-        </nav>
-      </aside>
+    <div className="min-h-screen bg-gray-50 flex dark:bg-slate-900 dark:text-white">
+      <CommonSidebar 
+        organizationName={organization.name} 
+        organizationPlan={organization.plan} 
+        onLogout={handleLogout}
+        isMenuOpen={isMenuOpen}
+      />
 
-      {/* Main content */}
       <main className="flex-1">
-        {/* Top bar */}
-        <header className="bg-white p-4 shadow-sm flex justify-between items-center sticky top-0 z-10">
+        <header className="bg-white p-4 shadow-sm flex justify-between items-center sticky top-0 z-10 dark:bg-slate-800">
           <div className="flex items-center">
             <Button variant="ghost" size="icon" onClick={toggleMenu} className="md:hidden mr-2">
               <Menu className="h-5 w-5" />
             </Button>
-            <h1 className="text-xl font-bold text-indigo-800">Settings</h1>
+            <h1 className="text-xl font-bold text-indigo-800 dark:text-indigo-300">Settings</h1>
           </div>
           <div className="flex items-center gap-4">
-            <div className="text-sm text-gray-600 hidden md:block">{user.email}</div>
+            <div className="text-sm text-gray-600 hidden md:block dark:text-gray-300">{user.email}</div>
             <Button variant="outline" size="sm" onClick={handleLogout}>
               <LogOut className="h-4 w-4 mr-2" /> Logout
             </Button>
           </div>
         </header>
 
-        {/* Settings content */}
-        <div className="p-6">
+        <div className="p-6 dark:bg-slate-900">
           <div className="mb-6">
             <Button 
               variant="outline" 
@@ -343,15 +267,14 @@ const SettingsContent = () => {
             
             <div className="flex flex-wrap justify-between items-start mb-6">
               <div>
-                <h1 className="text-3xl font-bold text-indigo-800">Settings</h1>
-                <p className="text-gray-500">Manage your account and preferences</p>
+                <h1 className="text-3xl font-bold text-indigo-800 dark:text-indigo-300">Settings</h1>
+                <p className="text-gray-500 dark:text-gray-400">Manage your account and preferences</p>
               </div>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            {/* Tabs sidebar (converts to tabs on mobile) */}
-            <Card className="md:col-span-1">
+            <Card className="md:col-span-1 dark:bg-slate-800 dark:border-slate-700">
               <CardContent className="p-0">
                 <div className="md:hidden p-4">
                   <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -371,7 +294,7 @@ const SettingsContent = () => {
                         <button
                           onClick={() => setActiveTab("profile")}
                           className={`w-full text-left flex items-center space-x-3 px-4 py-2.5 ${
-                            activeTab === "profile" ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-700 hover:bg-gray-100'
+                            activeTab === "profile" ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300 font-medium' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
                           }`}
                         >
                           <User className="h-5 w-5" />
@@ -382,7 +305,7 @@ const SettingsContent = () => {
                         <button
                           onClick={() => setActiveTab("account")}
                           className={`w-full text-left flex items-center space-x-3 px-4 py-2.5 ${
-                            activeTab === "account" ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-700 hover:bg-gray-100'
+                            activeTab === "account" ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300 font-medium' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
                           }`}
                         >
                           <CreditCard className="h-5 w-5" />
@@ -393,7 +316,7 @@ const SettingsContent = () => {
                         <button
                           onClick={() => setActiveTab("security")}
                           className={`w-full text-left flex items-center space-x-3 px-4 py-2.5 ${
-                            activeTab === "security" ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-700 hover:bg-gray-100'
+                            activeTab === "security" ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300 font-medium' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
                           }`}
                         >
                           <Lock className="h-5 w-5" />
@@ -404,7 +327,7 @@ const SettingsContent = () => {
                         <button
                           onClick={() => setActiveTab("notifications")}
                           className={`w-full text-left flex items-center space-x-3 px-4 py-2.5 ${
-                            activeTab === "notifications" ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-700 hover:bg-gray-100'
+                            activeTab === "notifications" ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300 font-medium' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
                           }`}
                         >
                           <Bell className="h-5 w-5" />
@@ -415,7 +338,7 @@ const SettingsContent = () => {
                         <button
                           onClick={() => setActiveTab("appearance")}
                           className={`w-full text-left flex items-center space-x-3 px-4 py-2.5 ${
-                            activeTab === "appearance" ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-700 hover:bg-gray-100'
+                            activeTab === "appearance" ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300 font-medium' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
                           }`}
                         >
                           <Palette className="h-5 w-5" />
@@ -424,16 +347,15 @@ const SettingsContent = () => {
                       </li>
                     </ul>
                   </nav>
-                  <Separator />
+                  <Separator className="dark:bg-slate-700" />
                   <div className="p-4">
-                    <div className="text-sm text-gray-500">
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
                       {organization.name}
                     </div>
                     <div className="mt-1 text-sm font-medium">
                       {organization.plan} Plan
                     </div>
-                    <div className="mt-1 text-xs text-gray-500">
-                      {/* Fix for the toLowerCase error - add null check */}
+                    <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                       Billing {organization.billingCycle ? organization.billingCycle.toLowerCase() : 'monthly'}, renews {organization.nextBillingDate || 'N/A'}
                     </div>
                     <Button 
@@ -448,14 +370,12 @@ const SettingsContent = () => {
               </CardContent>
             </Card>
 
-            {/* Settings content area */}
             <div className="md:col-span-3">
-              {/* Profile settings */}
               {activeTab === "profile" && (
-                <Card>
+                <Card className="dark:bg-slate-800 dark:border-slate-700">
                   <CardHeader>
                     <CardTitle>Profile Information</CardTitle>
-                    <CardDescription>Update your personal information and preferences</CardDescription>
+                    <CardDescription className="dark:text-gray-400">Update your personal information and preferences</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <div className="flex flex-col md:flex-row gap-6 items-start">
@@ -569,7 +489,7 @@ const SettingsContent = () => {
                       </div>
                     </div>
                   </CardContent>
-                  <CardFooter className="flex justify-end border-t bg-gray-50 px-6 py-4">
+                  <CardFooter className="flex justify-end border-t bg-gray-50 px-6 py-4 dark:bg-slate-900 dark:border-slate-700">
                     <Button onClick={saveProfile} className="bg-indigo-600 hover:bg-indigo-700">
                       <Save className="mr-2 h-4 w-4" /> Save Changes
                     </Button>
@@ -577,12 +497,11 @@ const SettingsContent = () => {
                 </Card>
               )}
 
-              {/* Account settings */}
               {activeTab === "account" && (
-                <Card>
+                <Card className="dark:bg-slate-800 dark:border-slate-700">
                   <CardHeader>
                     <CardTitle>Account & Billing</CardTitle>
-                    <CardDescription>Manage your account and subscription details</CardDescription>
+                    <CardDescription className="dark:text-gray-400">Manage your account and subscription details</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <div className="space-y-4">
@@ -593,7 +512,6 @@ const SettingsContent = () => {
                           <div>
                             <div className="font-semibold text-lg">{organization.plan} Plan</div>
                             <div className="text-sm text-gray-500">
-                              {/* Add null check for billingCycle */}
                               Billed {organization.billingCycle ? organization.billingCycle.toLowerCase() : 'monthly'}
                             </div>
                           </div>
@@ -717,12 +635,11 @@ const SettingsContent = () => {
                 </Card>
               )}
 
-              {/* Security settings */}
               {activeTab === "security" && (
-                <Card>
+                <Card className="dark:bg-slate-800 dark:border-slate-700">
                   <CardHeader>
                     <CardTitle>Security</CardTitle>
-                    <CardDescription>Manage your password and account security</CardDescription>
+                    <CardDescription className="dark:text-gray-400">Manage your password and account security</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <div className="space-y-4">
@@ -823,12 +740,11 @@ const SettingsContent = () => {
                 </Card>
               )}
               
-              {/* Notification settings */}
               {activeTab === "notifications" && (
-                <Card>
+                <Card className="dark:bg-slate-800 dark:border-slate-700">
                   <CardHeader>
                     <CardTitle>Notifications</CardTitle>
-                    <CardDescription>Configure how and when you receive notifications</CardDescription>
+                    <CardDescription className="dark:text-gray-400">Configure how and when you receive notifications</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <div className="space-y-4">
@@ -891,7 +807,7 @@ const SettingsContent = () => {
                       </div>
                     </div>
                   </CardContent>
-                  <CardFooter className="flex justify-end border-t bg-gray-50 px-6 py-4">
+                  <CardFooter className="flex justify-end border-t bg-gray-50 px-6 py-4 dark:bg-slate-900 dark:border-slate-700">
                     <Button 
                       onClick={saveNotificationSettings}
                       className="bg-indigo-600 hover:bg-indigo-700"
@@ -902,34 +818,33 @@ const SettingsContent = () => {
                 </Card>
               )}
               
-              {/* Appearance settings */}
               {activeTab === "appearance" && (
-                <Card>
+                <Card className="dark:bg-slate-800 dark:border-slate-700">
                   <CardHeader>
                     <CardTitle>Appearance</CardTitle>
-                    <CardDescription>Customize the look and feel of the application</CardDescription>
+                    <CardDescription className="dark:text-gray-400">Customize the look and feel of the application</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <div>
                           <h3 className="font-medium">Dark Mode</h3>
-                          <p className="text-sm text-gray-500">
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
                             Switch between light and dark theme
                           </p>
                         </div>
                         <Switch 
                           checked={darkMode} 
-                          onCheckedChange={setDarkMode} 
+                          onCheckedChange={handleDarkModeChange} 
                         />
                       </div>
                       
-                      <Separator />
+                      <Separator className="dark:bg-slate-700" />
                       
                       <div className="flex items-center justify-between">
                         <div>
                           <h3 className="font-medium">Compact View</h3>
-                          <p className="text-sm text-gray-500">
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
                             Reduce spacing for a more compact interface
                           </p>
                         </div>
@@ -939,12 +854,12 @@ const SettingsContent = () => {
                         />
                       </div>
                       
-                      <Separator />
+                      <Separator className="dark:bg-slate-700" />
                       
                       <div className="flex items-center justify-between">
                         <div>
                           <h3 className="font-medium">Animations</h3>
-                          <p className="text-sm text-gray-500">
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
                             Enable or disable UI animations
                           </p>
                         </div>
@@ -955,7 +870,7 @@ const SettingsContent = () => {
                       </div>
                     </div>
                   </CardContent>
-                  <CardFooter className="flex justify-end border-t bg-gray-50 px-6 py-4">
+                  <CardFooter className="flex justify-end border-t bg-gray-50 px-6 py-4 dark:bg-slate-900 dark:border-slate-700">
                     <Button 
                       onClick={saveAppearanceSettings}
                       className="bg-indigo-600 hover:bg-indigo-700"
@@ -973,11 +888,12 @@ const SettingsContent = () => {
   );
 };
 
-// Wrap with TaskProvider
 const Settings = () => (
-  <TaskProvider>
-    <SettingsContent />
-  </TaskProvider>
+  <ThemeProvider>
+    <TaskProvider>
+      <SettingsContent />
+    </TaskProvider>
+  </ThemeProvider>
 );
 
 export default Settings;
