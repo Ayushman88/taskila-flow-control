@@ -63,74 +63,105 @@ const TaskContext = createContext<TaskContextType | undefined>(undefined);
 export const TaskProvider = ({ children }: { children: ReactNode }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [initialized, setInitialized] = useState(false);
 
   // Load initial data from localStorage
   useEffect(() => {
-    const storedTasks = localStorage.getItem("tasks");
-    const storedProjects = localStorage.getItem("projects");
+    try {
+      const storedTasks = localStorage.getItem("tasks");
+      const storedProjects = localStorage.getItem("projects");
 
-    if (storedTasks) {
-      setTasks(JSON.parse(storedTasks));
-    } else {
-      // Initialize with sample tasks if none exist
+      if (storedTasks) {
+        setTasks(JSON.parse(storedTasks));
+      } else {
+        // Initialize with sample tasks if none exist
+        setTasks(sampleTasks);
+        localStorage.setItem("tasks", JSON.stringify(sampleTasks));
+      }
+
+      if (storedProjects) {
+        setProjects(JSON.parse(storedProjects));
+      } else {
+        // Initialize with sample projects if none exist
+        setProjects(sampleProjects);
+        localStorage.setItem("projects", JSON.stringify(sampleProjects));
+      }
+      
+      setInitialized(true);
+    } catch (error) {
+      console.error("Error loading data from localStorage:", error);
+      // Fallback to sample data if there's an error
       setTasks(sampleTasks);
-    }
-
-    if (storedProjects) {
-      setProjects(JSON.parse(storedProjects));
-    } else {
-      // Initialize with sample projects if none exist
       setProjects(sampleProjects);
+      setInitialized(true);
     }
   }, []);
 
   // Save to localStorage whenever data changes
   useEffect(() => {
-    localStorage.setItem("tasks", JSON.stringify(tasks));
-  }, [tasks]);
+    if (initialized) {
+      try {
+        localStorage.setItem("tasks", JSON.stringify(tasks));
+      } catch (error) {
+        console.error("Error saving tasks to localStorage:", error);
+      }
+    }
+  }, [tasks, initialized]);
 
   useEffect(() => {
-    localStorage.setItem("projects", JSON.stringify(projects));
-  }, [projects]);
+    if (initialized) {
+      try {
+        localStorage.setItem("projects", JSON.stringify(projects));
+      } catch (error) {
+        console.error("Error saving projects to localStorage:", error);
+      }
+    }
+  }, [projects, initialized]);
 
   const addTask = (task: Task) => {
-    setTasks([...tasks, task]);
+    setTasks(prevTasks => [...prevTasks, task]);
   };
 
   const updateTask = (id: string, updatedFields: Partial<Task>) => {
-    setTasks(
-      tasks.map((task) => (task.id === id ? { ...task, ...updatedFields, updatedAt: new Date().toISOString() } : task))
+    setTasks(prevTasks => 
+      prevTasks.map(task => (task.id === id 
+        ? { ...task, ...updatedFields, updatedAt: new Date().toISOString() } 
+        : task))
     );
   };
 
   const deleteTask = (id: string) => {
-    setTasks(tasks.filter((task) => task.id !== id));
+    setTasks(prevTasks => prevTasks.filter(task => task.id !== id));
   };
 
   const addProject = (project: Project) => {
-    setProjects([...projects, project]);
+    setProjects(prevProjects => [...prevProjects, project]);
   };
 
   const updateProject = (id: string, updatedFields: Partial<Project>) => {
-    setProjects(projects.map((project) => (project.id === id ? { ...project, ...updatedFields } : project)));
+    setProjects(prevProjects =>
+      prevProjects.map(project => (project.id === id 
+        ? { ...project, ...updatedFields } 
+        : project))
+    );
   };
 
   const deleteProject = (id: string) => {
-    setProjects(projects.filter((project) => project.id !== id));
+    setProjects(prevProjects => prevProjects.filter(project => project.id !== id));
     // Also delete all tasks associated with this project
-    setTasks(tasks.filter((task) => task.projectId !== id));
+    setTasks(prevTasks => prevTasks.filter(task => task.projectId !== id));
   };
 
   const getTasksByProject = (projectId: string) => {
-    return tasks.filter((task) => task.projectId === projectId);
+    return tasks.filter(task => task.projectId === projectId);
   };
 
   const getTasksByStatus = (status: Task["status"]) => {
-    return tasks.filter((task) => task.status === status);
+    return tasks.filter(task => task.status === status);
   };
 
   const getProject = (id: string) => {
-    return projects.find((project) => project.id === id);
+    return projects.find(project => project.id === id);
   };
 
   return (
