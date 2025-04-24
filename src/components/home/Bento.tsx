@@ -18,7 +18,7 @@ const StatCounter: React.FC<StatCounterProps> = ({ end }) => {
   );
 };
 
-const Bento: React.FC = () => {
+export const Bento: React.FC = () => {
   return (
     <div className="min-h-screen p-10 pt-20 flex flex-col gap-10 bg-white dark:bg-slate-900 dark:text-white">
       {/* Top Section */}
