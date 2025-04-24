@@ -16,8 +16,6 @@ export function Bento() {
             end={87} 
             decimals={0}
             delay={0}
-            enableScrollSpy
-            scrollSpyDelay={0}
             className="text-4xl font-bold text-primary" 
             suffix="%" 
           />
@@ -35,8 +33,6 @@ export function Bento() {
             end={12} 
             decimals={0}
             delay={0}
-            enableScrollSpy
-            scrollSpyDelay={0}
             className="text-4xl font-bold text-blue-500"
           />
           <span className="text-xl font-semibold text-blue-500 mb-1">hours/week</span>
@@ -54,8 +50,6 @@ export function Bento() {
             end={94} 
             decimals={0}
             delay={0}
-            enableScrollSpy
-            scrollSpyDelay={0}
             className="text-4xl font-bold text-green-600"
             suffix="%" 
           />
