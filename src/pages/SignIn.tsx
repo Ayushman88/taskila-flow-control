@@ -1,19 +1,22 @@
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
+import { FcGoogle } from "react-icons/fc";
 
 const SignIn = () => {
   const navigate = useNavigate();
+  const { signIn, signInWithGoogle } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
@@ -27,20 +30,39 @@ const SignIn = () => {
       return;
     }
 
-    // Simulate API call
-    setTimeout(() => {
-      // Store user info (in a real app, this would validate against a database)
-      localStorage.setItem("user", JSON.stringify({ email }));
+    try {
+      const { user } = await signIn(email, password);
       
+      if (user) {
+        toast({
+          title: "Success!",
+          description: "You've been signed in successfully.",
+        });
+        
+        navigate("/dashboard");
+      }
+    } catch (error: any) {
       toast({
-        title: "Success!",
-        description: "You've been signed in successfully.",
+        title: "Error signing in",
+        description: error.message || "An error occurred while signing in",
+        variant: "destructive",
       });
-
-      // Redirect to dashboard
-      navigate("/dashboard");
+    } finally {
       setIsSubmitting(false);
-    }, 1000);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      await signInWithGoogle();
+      // The redirect will happen automatically
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to sign in with Google",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -97,15 +119,30 @@ const SignIn = () => {
                 {isSubmitting ? "Signing in..." : "Sign In"}
               </Button>
               
+              <div className="relative flex items-center justify-center mt-4">
+                <div className="border-t border-gray-300 flex-grow"></div>
+                <div className="mx-4 text-sm text-gray-500">OR</div>
+                <div className="border-t border-gray-300 flex-grow"></div>
+              </div>
+              
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full border border-gray-300 flex items-center justify-center gap-2"
+                onClick={handleGoogleSignIn}
+              >
+                <FcGoogle className="h-5 w-5" />
+                Sign in with Google
+              </Button>
+              
               <div className="text-center text-sm text-gray-600">
                 Don't have an account?{" "}
-                <button 
-                  type="button"
+                <Link 
+                  to="/signup"
                   className="text-indigo-600 hover:text-indigo-800 font-medium"
-                  onClick={() => navigate("/signup")}
                 >
                   Sign Up
-                </button>
+                </Link>
               </div>
             </div>
           </form>

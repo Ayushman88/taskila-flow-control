@@ -1,21 +1,24 @@
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
+import { FcGoogle } from "react-icons/fc";
 
 const SignUp = () => {
   const navigate = useNavigate();
+  const { signUp, signInWithGoogle } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
@@ -39,20 +42,48 @@ const SignUp = () => {
       return;
     }
 
-    // Simulate API call
-    setTimeout(() => {
-      // Store user info
-      localStorage.setItem("user", JSON.stringify({ name, email }));
-      
-      toast({
-        title: "Success!",
-        description: "Your account has been created.",
-      });
+    try {
+      // Split name into first and last name
+      const nameParts = name.trim().split(/\s+/);
+      const firstName = nameParts[0];
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "";
 
-      // Redirect to create organization
-      navigate("/create-organization");
+      const { user } = await signUp(email, password, {
+        first_name: firstName,
+        last_name: lastName,
+      });
+      
+      if (user) {
+        toast({
+          title: "Success!",
+          description: "Your account has been created. Please check your email to verify your account.",
+        });
+        
+        // Navigate to create organization page
+        navigate("/create-organization");
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error creating account",
+        description: error.message || "An error occurred while creating your account",
+        variant: "destructive",
+      });
+    } finally {
       setIsSubmitting(false);
-    }, 1000);
+    }
+  };
+
+  const handleGoogleSignUp = async () => {
+    try {
+      await signInWithGoogle();
+      // The redirect will happen automatically
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to sign up with Google",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -131,15 +162,30 @@ const SignUp = () => {
                 {isSubmitting ? "Creating account..." : "Create Account"}
               </Button>
 
+              <div className="relative flex items-center justify-center mt-4">
+                <div className="border-t border-gray-300 flex-grow"></div>
+                <div className="mx-4 text-sm text-gray-500">OR</div>
+                <div className="border-t border-gray-300 flex-grow"></div>
+              </div>
+              
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full border border-gray-300 flex items-center justify-center gap-2"
+                onClick={handleGoogleSignUp}
+              >
+                <FcGoogle className="h-5 w-5" />
+                Sign up with Google
+              </Button>
+
               <div className="text-center text-sm text-gray-600">
                 Already have an account?{" "}
-                <button 
-                  type="button"
+                <Link
+                  to="/signin"
                   className="text-indigo-600 hover:text-indigo-800 font-medium"
-                  onClick={() => navigate("/signin")}
                 >
                   Sign In
-                </button>
+                </Link>
               </div>
             </div>
           </form>
