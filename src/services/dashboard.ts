@@ -100,15 +100,22 @@ export const getOrganizationMembers = async (organizationId: string): Promise<Or
 };
 
 export const getOrganizationProjects = async (organizationId: string): Promise<Project[]> => {
-  const { data, error } = await supabase
-    .from('projects')
-    .select('*')
-    .eq('organization_id', organizationId);
-  
-  if (error) {
-    console.error('Error fetching projects:', error);
+  // Here we need to check if the 'projects' table exists in the database
+  // If it doesn't exist yet, this function should return an empty array
+  try {
+    const { data, error } = await supabase
+      .from('projects')
+      .select('*')
+      .eq('organization_id', organizationId);
+    
+    if (error) {
+      console.error('Error fetching projects:', error);
+      return [];
+    }
+    
+    return data as unknown as Project[];
+  } catch (error) {
+    console.error('Error in getOrganizationProjects:', error);
     return [];
   }
-  
-  return data as Project[];
 };

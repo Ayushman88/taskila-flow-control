@@ -32,7 +32,7 @@ import ScheduleMeetingModal from "@/components/dashboard/ScheduleMeetingModal";
 import CreateWhiteboardModal from "@/components/dashboard/CreateWhiteboardModal";
 import CreateDocumentModal from "@/components/dashboard/CreateDocumentModal";
 import { useAuth } from "@/context/AuthContext";
-import { fetchUserOrganizations, Organization } from "@/services/dashboard";
+import { getUserOrganizations, Organization } from "@/services/dashboard";
 import Sidebar from "@/components/layout/Sidebar";
 
 const DashboardContent = () => {
@@ -60,7 +60,7 @@ const DashboardContent = () => {
   const loadUserOrganization = async () => {
     try {
       if (user) {
-        const organizations = await fetchUserOrganizations(user.id);
+        const organizations = await getUserOrganizations();
         if (organizations && organizations.length > 0) {
           setOrganization(organizations[0]);
         }
