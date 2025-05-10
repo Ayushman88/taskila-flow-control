@@ -103,17 +103,10 @@ export const getOrganizationProjects = async (organizationId: string): Promise<P
   // Here we need to check if the 'projects' table exists in the database
   // If it doesn't exist yet, this function should return an empty array
   try {
-    // Use a raw SQL query or a custom function call instead of directly accessing 
-    // the projects table which doesn't exist in the database types yet
-    const { data, error } = await supabase
-      .rpc('get_organization_projects', { org_id: organizationId })
-      .catch(() => {
-        // If the RPC doesn't exist either (likely case initially), return a mock structure
-        console.log('Projects feature not fully implemented yet, returning mock data');
-        return {
-          data: [],
-          error: null
-        };
+    // Use Edge Function to get organization projects
+    const { data, error } = await supabase.functions
+      .invoke('get-organization-projects', {
+        body: { org_id: organizationId }
       });
     
     if (error) {

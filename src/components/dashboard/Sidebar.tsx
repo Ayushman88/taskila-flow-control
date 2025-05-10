@@ -15,20 +15,14 @@ import {
   Clock
 } from "lucide-react";
 
-interface Organization {
-  name: string;
-  teamSize?: string;
-  plan: string;
-}
-
 interface SidebarProps {
-  organization: Organization;
+  organizationName: string;
+  organizationPlan: string;
+  onLogout: () => void;
   isMenuOpen: boolean;
-  handleLogout?: () => void;
-  toggleMenu?: () => void;
 }
 
-const Sidebar = ({ organization, isMenuOpen, handleLogout }: SidebarProps) => {
+const Sidebar = ({ organizationName, organizationPlan, onLogout, isMenuOpen }: SidebarProps) => {
   const location = useLocation();
   const currentPath = location.pathname;
 
@@ -39,8 +33,8 @@ const Sidebar = ({ organization, isMenuOpen, handleLogout }: SidebarProps) => {
   return (
     <aside className={`${isMenuOpen ? 'block' : 'hidden'} md:block w-64 bg-gradient-to-b from-indigo-800 to-purple-900 text-white fixed md:static h-screen z-50 transition-all duration-300 ease-in-out`}>
       <div className="p-4 border-b border-indigo-700">
-        <h2 className="text-xl font-bold">{organization.name}</h2>
-        <p className="text-sm text-indigo-200">{organization.plan} Plan</p>
+        <h2 className="text-xl font-bold">{organizationName}</h2>
+        <p className="text-sm text-indigo-200">{organizationPlan} Plan</p>
       </div>
       <nav className="p-2">
         <ul className="space-y-1">
@@ -134,10 +128,10 @@ const Sidebar = ({ organization, isMenuOpen, handleLogout }: SidebarProps) => {
               <span>Settings</span>
             </Link>
           </li>
-          {handleLogout && (
+          {onLogout && (
             <li>
               <button
-                onClick={handleLogout}
+                onClick={onLogout}
                 className="w-full flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors"
               >
                 <LogOut className="h-5 w-5" />

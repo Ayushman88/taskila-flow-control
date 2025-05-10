@@ -16,8 +16,42 @@ serve(async (req) => {
   try {
     const { org_id } = await req.json()
     
-    // Return empty array for now - this is a placeholder until the projects table is created
+    // Fetch the organization plan to determine limitations
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: req.headers.get('Authorization')! },
+        },
+      }
+    )
+    
+    // Get the organization to check its plan
+    const { data: organization } = await supabaseClient
+      .from('organizations')
+      .select('plan')
+      .eq('id', org_id)
+      .single()
+    
+    // Return sample mock projects based on the plan
     const mockProjects = []
+    
+    // Add a few sample projects for demonstration
+    if (organization && organization.plan) {
+      // Add a demo project for all plans
+      mockProjects.push({
+        id: "demo-project-1",
+        name: "Welcome Project",
+        description: "Get started with your first project",
+        status: "To Do",
+        progress: 0,
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        organization_id: org_id,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+    }
     
     return new Response(
       JSON.stringify({ data: mockProjects }),

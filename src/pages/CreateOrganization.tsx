@@ -176,7 +176,7 @@ const CreateOrganization = () => {
           team_size: teamSize,
           plan: selectedPlan,
           payment_id: paymentId || null,
-          subscription_status: paymentId ? 'active' : 'free',
+          subscription_status: 'active', // Always mark as active regardless of plan type
         })
         .select()
         .single();
