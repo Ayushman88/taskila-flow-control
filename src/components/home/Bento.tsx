@@ -12,9 +12,7 @@ const StatCounter: React.FC<StatCounterProps> = ({ end }) => {
     <CountUp
       start={0}
       end={end}
-      delay={0}
-      decimals={0}
-      separator=","
+      duration={2.5}
       className="text-7xl font-semibold"
     />
   );

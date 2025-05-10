@@ -55,7 +55,7 @@ const SignIn = () => {
   const handleGoogleSignIn = async () => {
     try {
       await signInWithGoogle();
-      // The redirect will happen automatically
+      navigate("/dashboard");
     } catch (error: any) {
       toast({
         title: "Error",

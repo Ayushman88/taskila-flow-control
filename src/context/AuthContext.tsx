@@ -1,13 +1,30 @@
 
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
-import { Session, User } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import { 
+  User, 
+  onAuthStateChanged, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
+  signOut as firebaseSignOut
+} from 'firebase/auth';
+import { auth, db } from '@/integrations/firebase/client';
 import { useNavigate } from 'react-router-dom';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+
+interface Profile {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  avatar_url: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
 
 interface AuthContextType {
-  session: Session | null;
   user: User | null;
-  profile: any | null;
+  profile: Profile | null;
   isLoading: boolean;
   signUp: (email: string, password: string, userData?: any) => Promise<any>;
   signIn: (email: string, password: string) => Promise<any>;
@@ -19,96 +36,71 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<any | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Clean up auth state helper function
-  const cleanupAuthState = () => {
-    // Remove standard auth tokens
-    localStorage.removeItem('supabase.auth.token');
-    // Remove all Supabase auth keys from localStorage
-    Object.keys(localStorage).forEach((key) => {
-      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-        localStorage.removeItem(key);
-      }
-    });
-  };
-
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, currentSession) => {
-        setSession(currentSession);
-        setUser(currentSession?.user ?? null);
-
-        // Defer data fetching to prevent deadlocks
-        if (currentSession?.user) {
-          setTimeout(() => {
-            fetchProfile(currentSession.user.id);
-          }, 0);
-        }
-      }
-    );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
-      
-      if (currentSession?.user) {
-        fetchProfile(currentSession.user.id);
+    // Set up auth state listener
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        // Fetch user profile data
+        setTimeout(() => {
+          fetchProfile(currentUser.uid);
+        }, 0);
+      } else {
+        setProfile(null);
       }
       setIsLoading(false);
     });
 
-    return () => {
-      subscription.unsubscribe();
-    };
+    // Cleanup subscription
+    return () => unsubscribe();
   }, []);
 
   const fetchProfile = async (userId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (error) {
-        console.error('Error fetching profile:', error);
-        setProfile(null);
+      const profileRef = doc(db, 'profiles', userId);
+      const profileSnapshot = await getDoc(profileRef);
+      
+      if (profileSnapshot.exists()) {
+        const profileData = profileSnapshot.data() as Omit<Profile, 'id'>;
+        setProfile({ id: userId, ...profileData });
       } else {
-        setProfile(data);
+        // Profile doesn't exist yet
+        setProfile(null);
       }
     } catch (error) {
-      console.error('Unexpected error fetching profile:', error);
+      console.error('Error fetching profile:', error);
       setProfile(null);
     }
   };
 
   const refreshProfile = async () => {
     if (user) {
-      await fetchProfile(user.id);
+      await fetchProfile(user.uid);
     }
   };
 
   const signUp = async (email: string, password: string, userData?: any) => {
     try {
-      cleanupAuthState();
+      // Create user in Firebase Auth
+      const result = await createUserWithEmailAndPassword(auth, email, password);
       
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: userData || {}
-        }
-      });
+      // Create profile document in Firestore
+      const profileData = {
+        first_name: userData?.first_name || null,
+        last_name: userData?.last_name || null,
+        avatar_url: userData?.avatar_url || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
       
-      if (error) throw error;
-      return data;
+      await setDoc(doc(db, 'profiles', result.user.uid), profileData);
+      
+      return { user: result.user };
     } catch (error) {
       console.error('Error signing up:', error);
       throw error;
@@ -117,22 +109,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const signIn = async (email: string, password: string) => {
     try {
-      cleanupAuthState();
-      
-      // Attempt global sign out first
-      try {
-        await supabase.auth.signOut({ scope: 'global' });
-      } catch (err) {
-        // Continue even if this fails
-      }
-      
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-      
-      if (error) throw error;
-      return data;
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      return { user: result.user };
     } catch (error) {
       console.error('Error signing in:', error);
       throw error;
@@ -141,17 +119,34 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const signInWithGoogle = async () => {
     try {
-      cleanupAuthState();
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
       
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/dashboard`
+      // Check if profile exists, if not create one
+      const profileRef = doc(db, 'profiles', result.user.uid);
+      const profileSnapshot = await getDoc(profileRef);
+      
+      if (!profileSnapshot.exists()) {
+        const { displayName, photoURL } = result.user;
+        let firstName = null;
+        let lastName = null;
+        
+        if (displayName) {
+          const nameParts = displayName.split(' ');
+          firstName = nameParts[0] || null;
+          lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : null;
         }
-      });
+        
+        await setDoc(profileRef, {
+          first_name: firstName,
+          last_name: lastName,
+          avatar_url: photoURL,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+      }
       
-      if (error) throw error;
-      return data;
+      return { user: result.user };
     } catch (error) {
       console.error('Error signing in with Google:', error);
       throw error;
@@ -160,17 +155,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const signOut = async () => {
     try {
-      cleanupAuthState();
-      
-      // Attempt global sign out
-      await supabase.auth.signOut({ scope: 'global' });
-      
-      setSession(null);
+      await firebaseSignOut(auth);
       setUser(null);
       setProfile(null);
       
-      // Force page reload for a clean state
-      window.location.href = '/';
+      // Redirect to home page
+      navigate('/');
     } catch (error) {
       console.error('Error signing out:', error);
       throw error;
@@ -178,7 +168,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const value = {
-    session,
     user,
     profile,
     isLoading,

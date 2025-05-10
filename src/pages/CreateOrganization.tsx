@@ -8,7 +8,8 @@ import { ArrowLeft } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import PricingTier from "@/components/onboarding/PricingTier";
 import { useAuth } from "@/context/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/integrations/firebase/client";
+import { doc, setDoc, addDoc, collection } from "firebase/firestore";
 
 declare global {
   interface Window {
@@ -122,7 +123,7 @@ const CreateOrganization = () => {
 
       // Create a Razorpay order
       const options = {
-        key: "rzp_test_6fZRlRpRX5Mny0", // Replace with your Razorpay key
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID || "rzp_test_6fZRlRpRX5Mny0", // Replace with your Razorpay key
         amount: selectedTier.amount,
         currency: "INR",
         name: "Taskila",
@@ -132,7 +133,7 @@ const CreateOrganization = () => {
           await createOrganization(response.razorpay_payment_id);
         },
         prefill: {
-          name: user?.user_metadata?.first_name + " " + user?.user_metadata?.last_name || "",
+          name: user?.displayName || "",
           email: user?.email || "",
         },
         theme: {
@@ -168,31 +169,26 @@ const CreateOrganization = () => {
     try {
       const selectedPlan = teamSize === "small" ? "Free" : teamSize === "medium" ? "Pro" : "Enterprise";
       
-      // Create organization in Supabase
-      const { data: organization, error: orgError } = await supabase
-        .from('organizations')
-        .insert({
-          name: organizationName,
-          team_size: teamSize,
-          plan: selectedPlan,
-          payment_id: paymentId || null,
-          subscription_status: 'active', // Always mark as active regardless of plan type
-        })
-        .select()
-        .single();
-
-      if (orgError) throw orgError;
+      // Create organization in Firestore
+      const orgRef = collection(db, 'organizations');
+      const orgDoc = await addDoc(orgRef, {
+        name: organizationName,
+        team_size: teamSize,
+        plan: selectedPlan,
+        payment_id: paymentId || null,
+        subscription_status: 'active', // Mark as active regardless of plan type
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
 
       // Link user to organization
-      const { error: memberError } = await supabase
-        .from('organization_members')
-        .insert({
-          organization_id: organization.id,
-          user_id: user!.id,
-          role: 'admin'
-        });
-
-      if (memberError) throw memberError;
+      const memberRef = collection(db, 'organization_members');
+      await addDoc(memberRef, {
+        organization_id: orgDoc.id,
+        user_id: user!.uid,
+        role: 'admin',
+        created_at: new Date().toISOString()
+      });
 
       toast({
         title: "Success!",
