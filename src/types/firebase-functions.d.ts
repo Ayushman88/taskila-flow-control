@@ -25,4 +25,8 @@ declare module 'firebase-functions' {
   export interface CloudFunction<T> {
     run: (data: T) => Promise<any>;
   }
+  
+  // Add initialization function
+  export function initializeApp(): any;
 }
+

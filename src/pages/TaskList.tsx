@@ -257,10 +257,10 @@ const TaskListContent = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       <Sidebar 
-        organization={organization} 
-        isMenuOpen={isMenuOpen} 
-        toggleMenu={toggleMenu}
-        handleLogout={handleLogout}
+        organizationName={organization?.name || 'Organization'} 
+        organizationPlan={organization?.plan || 'Free'} 
+        onLogout={handleLogout}
+        isMenuOpen={isMenuOpen}
       />
 
       <main className="flex-1">

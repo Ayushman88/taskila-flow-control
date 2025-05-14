@@ -1,0 +1,114 @@
+
+// Firestore Rules
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Base rules for authenticated users
+    match /{document=**} {
+      allow read, write: if false; // Default deny
+    }
+    
+    // Profiles collection
+    match /profiles/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Organizations collection
+    match /organizations/{organizationId} {
+      allow read: if request.auth != null && exists(/databases/$(database)/documents/organization_members/$(getOrgMemberDocId(request.auth.uid, organizationId)));
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && isOrgAdmin(organizationId);
+      allow delete: if request.auth != null && isOrgAdmin(organizationId);
+      
+      // Function to check if user is admin
+      function isOrgAdmin(orgId) {
+        let memberships = getOrgMemberships(request.auth.uid, orgId);
+        return memberships.size() > 0 && memberships[0].role == "admin";
+      }
+      
+      function getOrgMemberships(userId, orgId) {
+        return get(/databases/$(database)/documents/organization_members/$(getOrgMemberDocId(userId, orgId)));
+      }
+      
+      function getOrgMemberDocId(userId, orgId) {
+        return query(/databases/$(database)/documents/organization_members)
+                .where("user_id", "==", userId)
+                .where("organization_id", "==", orgId).limit(1);
+      }
+    }
+    
+    // Organization members collection
+    match /organization_members/{memberId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && isOrgAdmin(request.resource.data.organization_id);
+      allow update, delete: if request.auth != null && isOrgAdmin(resource.data.organization_id);
+      
+      function isOrgAdmin(orgId) {
+        let memberships = getOrgMemberships(request.auth.uid, orgId);
+        return memberships.size() > 0 && memberships[0].role == "admin";
+      }
+      
+      function getOrgMemberships(userId, orgId) {
+        return query(/databases/$(database)/documents/organization_members)
+                .where("user_id", "==", userId)
+                .where("organization_id", "==", orgId).limit(1);
+      }
+    }
+    
+    // Projects collection
+    match /projects/{projectId} {
+      allow read: if request.auth != null && canAccessProject(projectId);
+      allow create: if request.auth != null && canAccessOrg(request.resource.data.organization_id);
+      allow update, delete: if request.auth != null && canAccessProject(projectId);
+      
+      function canAccessProject(projId) {
+        let project = get(/databases/$(database)/documents/projects/$(projId));
+        return canAccessOrg(project.data.organization_id);
+      }
+      
+      function canAccessOrg(orgId) {
+        return exists(/databases/$(database)/documents/organization_members/$(getOrgMemberDocId(request.auth.uid, orgId)));
+      }
+      
+      function getOrgMemberDocId(userId, orgId) {
+        return query(/databases/$(database)/documents/organization_members)
+                .where("user_id", "==", userId)
+                .where("organization_id", "==", orgId).limit(1);
+      }
+    }
+  }
+}
+
+// Storage Rules
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+    
+    // Organization specific files
+    match /organizations/{organizationId}/{allPaths=**} {
+      allow read: if request.auth != null && canAccessOrg(organizationId);
+      allow write: if request.auth != null && canAccessOrg(organizationId);
+      
+      function canAccessOrg(orgId) {
+        return firestore.exists(/databases/(default)/documents/organization_members/$(getOrgMemberDocId(request.auth.uid, orgId)));
+      }
+      
+      function getOrgMemberDocId(userId, orgId) {
+        return firestore.query(/databases/(default)/documents/organization_members)
+                .where("user_id", "==", userId)
+                .where("organization_id", "==", orgId).limit(1);
+      }
+    }
+    
+    // User specific files
+    match /users/{userId}/{allPaths=**} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
