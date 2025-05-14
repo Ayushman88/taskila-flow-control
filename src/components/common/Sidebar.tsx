@@ -13,6 +13,7 @@ import {
   KanbanSquare,
   GanttChartSquare,
   BookOpen,
+  Calendar,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -149,6 +150,19 @@ const Sidebar: React.FC<SidebarProps> = ({
             >
               <BookOpen className="h-5 w-5" />
               <span>Notes</span>
+            </Link>
+          </li>
+          <li>
+            <Link
+              to="/calendar"
+              className={`flex items-center space-x-3 px-3 py-2 rounded-md ${
+                isActive("/calendar")
+                  ? "bg-indigo-700 text-white font-medium"
+                  : "hover:bg-indigo-700 transition-colors"
+              }`}
+            >
+              <Calendar className="h-5 w-5" />
+              <span>Calendar</span>
             </Link>
           </li>
           <li>
