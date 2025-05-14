@@ -43,9 +43,13 @@ import { v4 as uuidv4 } from 'uuid';
 import Sidebar from "@/components/dashboard/Sidebar";
 
 interface Organization {
+  id: string;
   name: string;
-  teamSize: string;
+  team_size: string;
   plan: string;
+  subscription_status?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 const TaskListContent = () => {
@@ -86,9 +90,35 @@ const TaskListContent = () => {
     const user = JSON.parse(userStr);
     setUserEmail(user.email);
     
-    const orgStr = localStorage.getItem("organization");
-    if (orgStr) {
-      setOrganization(JSON.parse(orgStr));
+    // Try to get current org from localStorage
+    const currentOrgId = localStorage.getItem("currentOrganizationId");
+    
+    if (currentOrgId) {
+      // This is a mock implementation - in a real app, you would fetch from Firestore
+      setOrganization({
+        id: currentOrgId,
+        name: organizationName || "My Organization",
+        team_size: "small",
+        plan: "Free",
+        subscription_status: "active",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+    } else {
+      // Fallback to organization from localStorage if exists
+      const orgStr = localStorage.getItem("organization");
+      if (orgStr) {
+        const parsedOrg = JSON.parse(orgStr);
+        setOrganization({
+          id: "local-org-id",
+          name: parsedOrg.name || "My Organization",
+          team_size: "small",
+          plan: parsedOrg.plan || "Free",
+          subscription_status: "active",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+      }
     }
 
     const tomorrow = new Date();

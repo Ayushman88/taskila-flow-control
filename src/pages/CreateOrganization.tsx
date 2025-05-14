@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,7 @@ import { toast } from "@/hooks/use-toast";
 import PricingTier from "@/components/onboarding/PricingTier";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/integrations/firebase/client";
-import { doc, setDoc, addDoc, collection } from "firebase/firestore";
+import { doc, setDoc, addDoc, collection, getFirestore } from "firebase/firestore";
 
 declare global {
   interface Window {
@@ -167,13 +166,18 @@ const CreateOrganization = () => {
 
   const createOrganization = async (paymentId?: string) => {
     try {
+      if (!user) {
+        throw new Error("User is not authenticated");
+      }
+      
       const selectedPlan = teamSize === "small" ? "Free" : teamSize === "medium" ? "Pro" : "Enterprise";
+      const teamSizeValue = teamSize === "small" ? "small" : teamSize === "medium" ? "medium" : "large";
       
       // Create organization in Firestore
       const orgRef = collection(db, 'organizations');
       const orgDoc = await addDoc(orgRef, {
         name: organizationName,
-        team_size: teamSize,
+        team_size: teamSizeValue,
         plan: selectedPlan,
         payment_id: paymentId || null,
         subscription_status: 'active', // Mark as active regardless of plan type
@@ -181,15 +185,22 @@ const CreateOrganization = () => {
         updated_at: new Date().toISOString()
       });
 
-      // Link user to organization
-      const memberRef = collection(db, 'organization_members');
-      await addDoc(memberRef, {
+      console.log("Organization created with ID:", orgDoc.id);
+
+      // Link user to organization with a predictable ID format (userId_orgId)
+      const memberDocId = `${user.uid}_${orgDoc.id}`;
+      await setDoc(doc(db, 'organization_members', memberDocId), {
         organization_id: orgDoc.id,
-        user_id: user!.uid,
+        user_id: user.uid,
         role: 'admin',
         created_at: new Date().toISOString()
       });
 
+      console.log("Organization member link created with ID:", memberDocId);
+
+      // Save organization to localStorage for immediate use
+      localStorage.setItem("currentOrganizationId", orgDoc.id);
+      
       toast({
         title: "Success!",
         description: "Your organization has been created.",

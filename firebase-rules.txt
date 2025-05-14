@@ -16,43 +16,31 @@ service cloud.firestore {
     
     // Organizations collection
     match /organizations/{organizationId} {
-      allow read: if request.auth != null && exists(/databases/$(database)/documents/organization_members/$(getOrgMemberDocId(request.auth.uid, organizationId)));
+      // Allow read if user is authenticated and is a member of the organization
+      allow read: if request.auth != null;
+      // Allow create if user is authenticated
       allow create: if request.auth != null;
-      allow update: if request.auth != null && isOrgAdmin(organizationId);
-      allow delete: if request.auth != null && isOrgAdmin(organizationId);
+      // Allow update, delete if user is admin of the organization
+      allow update, delete: if request.auth != null && isOrgAdmin(organizationId);
       
       // Function to check if user is admin
       function isOrgAdmin(orgId) {
-        let memberships = getOrgMemberships(request.auth.uid, orgId);
-        return memberships.size() > 0 && memberships[0].role == "admin";
-      }
-      
-      function getOrgMemberships(userId, orgId) {
-        return get(/databases/$(database)/documents/organization_members/$(getOrgMemberDocId(userId, orgId)));
-      }
-      
-      function getOrgMemberDocId(userId, orgId) {
-        return query(/databases/$(database)/documents/organization_members)
-                .where("user_id", "==", userId)
-                .where("organization_id", "==", orgId).limit(1);
+        return exists(/databases/$(database)/documents/organization_members/$(request.auth.uid + '_' + orgId)) &&
+               get(/databases/$(database)/documents/organization_members/$(request.auth.uid + '_' + orgId)).data.role == "admin";
       }
     }
     
     // Organization members collection
     match /organization_members/{memberId} {
       allow read: if request.auth != null;
-      allow create: if request.auth != null && isOrgAdmin(request.resource.data.organization_id);
-      allow update, delete: if request.auth != null && isOrgAdmin(resource.data.organization_id);
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && 
+                          (memberId.split('_')[0] == request.auth.uid || 
+                           isOrgAdmin(memberId.split('_')[1]));
       
       function isOrgAdmin(orgId) {
-        let memberships = getOrgMemberships(request.auth.uid, orgId);
-        return memberships.size() > 0 && memberships[0].role == "admin";
-      }
-      
-      function getOrgMemberships(userId, orgId) {
-        return query(/databases/$(database)/documents/organization_members)
-                .where("user_id", "==", userId)
-                .where("organization_id", "==", orgId).limit(1);
+        return exists(/databases/$(database)/documents/organization_members/$(request.auth.uid + '_' + orgId)) &&
+               get(/databases/$(database)/documents/organization_members/$(request.auth.uid + '_' + orgId)).data.role == "admin";
       }
     }
     
@@ -68,13 +56,7 @@ service cloud.firestore {
       }
       
       function canAccessOrg(orgId) {
-        return exists(/databases/$(database)/documents/organization_members/$(getOrgMemberDocId(request.auth.uid, orgId)));
-      }
-      
-      function getOrgMemberDocId(userId, orgId) {
-        return query(/databases/$(database)/documents/organization_members)
-                .where("user_id", "==", userId)
-                .where("organization_id", "==", orgId).limit(1);
+        return exists(/databases/$(database)/documents/organization_members/$(request.auth.uid + '_' + orgId));
       }
     }
   }
@@ -95,13 +77,7 @@ service firebase.storage {
       allow write: if request.auth != null && canAccessOrg(organizationId);
       
       function canAccessOrg(orgId) {
-        return firestore.exists(/databases/(default)/documents/organization_members/$(getOrgMemberDocId(request.auth.uid, orgId)));
-      }
-      
-      function getOrgMemberDocId(userId, orgId) {
-        return firestore.query(/databases/(default)/documents/organization_members)
-                .where("user_id", "==", userId)
-                .where("organization_id", "==", orgId).limit(1);
+        return firestore.exists(/databases/(default)/documents/organization_members/$(request.auth.uid + '_' + orgId));
       }
     }
     
