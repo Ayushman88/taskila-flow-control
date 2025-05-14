@@ -257,10 +257,9 @@ const TaskListContent = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       <Sidebar 
-        organizationName={organization?.name || 'Organization'} 
-        organizationPlan={organization?.plan || 'Free'} 
-        onLogout={handleLogout}
+        organization={organization} 
         isMenuOpen={isMenuOpen}
+        handleLogout={handleLogout}
       />
 
       <main className="flex-1">

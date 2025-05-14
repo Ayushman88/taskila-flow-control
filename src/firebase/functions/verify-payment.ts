@@ -12,7 +12,7 @@ const db = admin.firestore();
 export const verifyRazorpayPayment = functions.https.onCall(async (data, context) => {
   // Check if user is authenticated
   if (!context.auth) {
-    throw new functions.https.HttpsError(
+    throw functions.https.HttpsError(
       'unauthenticated',
       'The function must be called while authenticated.'
     );
@@ -39,6 +39,6 @@ export const verifyRazorpayPayment = functions.https.onCall(async (data, context
     };
   } catch (error) {
     console.error('Error verifying payment:', error);
-    throw new functions.https.HttpsError('internal', error.message);
+    throw functions.https.HttpsError('internal', error.message);
   }
 });

@@ -29,4 +29,3 @@ declare module 'firebase-functions' {
   // Add initialization function
   export function initializeApp(): any;
 }
-
