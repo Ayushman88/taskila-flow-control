@@ -1,11 +1,8 @@
-
-// Re-export from hooks folder to avoid circular imports
+import { type ToastProps } from "@/components/ui/toast";
 import * as ToastPrimitive from "@radix-ui/react-toast";
 import { useToast, toast } from "@/hooks/use-toast";
 
 export { useToast, toast };
-export type ToastProps = React.ComponentPropsWithoutRef<typeof ToastPrimitive.Root>;
-export type ToastActionElement = React.ReactElement<typeof ToastPrimitive.Action>;
 
 export interface Toast {
   id: string;
@@ -14,3 +11,7 @@ export interface Toast {
   action?: ToastActionElement;
   variant?: "default" | "destructive";
 }
+
+export type ToastActionElement = React.ReactElement<
+  typeof ToastPrimitive.Action
+>;
