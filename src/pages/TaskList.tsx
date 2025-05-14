@@ -30,7 +30,7 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { v4 as uuidv4 } from 'uuid';
-import Sidebar from "@/components/dashboard/Sidebar";
+import Sidebar from "@/components/layout/Sidebar";
 import { useAuth } from "@/context/AuthContext";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/integrations/firebase/client";
@@ -296,8 +296,8 @@ const TaskListContent = () => {
     <div className="min-h-screen bg-gray-50 flex">
       {/* Left sidebar */}
       <Sidebar
-        organization={organization.name}
-        plan={organization.plan}
+        organizationName={organization.name}
+        organizationPlan={organization.plan}
         onLogout={handleLogout}
         isMenuOpen={isMenuOpen}
       />

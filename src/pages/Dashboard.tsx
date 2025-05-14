@@ -6,7 +6,18 @@ import {
   Edit,
   Trash2,
   FileUp,
-  Menu
+  Menu,
+  List,
+  FileText,
+  Clock,
+  KanbanSquare,
+  Timer,
+  BarChart2,
+  BrainCircuit,
+  GitBranch,
+  Lock,
+  BookOpen,
+  CheckCircle2
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
