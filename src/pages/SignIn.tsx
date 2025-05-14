@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,10 +11,35 @@ import { FcGoogle } from "react-icons/fc";
 
 const SignIn = () => {
   const navigate = useNavigate();
-  const { signIn, signInWithGoogle } = useAuth();
+  const { signIn, signInWithGoogle, checkUserOrganization, user } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+
+  useEffect(() => {
+    if (user && !isRedirecting) {
+      setIsRedirecting(true);
+      handleSuccessfulAuth();
+    }
+  }, [user]);
+
+  const handleSuccessfulAuth = async () => {
+    try {
+      // Check if user has an organization
+      const orgId = await checkUserOrganization();
+      
+      if (orgId) {
+        // User has organization, redirect to dashboard
+        navigate("/dashboard");
+      } else {
+        // User doesn't have organization, redirect to create one
+        navigate("/create-organization");
+      }
+    } catch (error) {
+      console.error("Error during redirection:", error);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,23 +56,20 @@ const SignIn = () => {
     }
 
     try {
-      const { user } = await signIn(email, password);
+      await signIn(email, password);
       
-      if (user) {
-        toast({
-          title: "Success!",
-          description: "You've been signed in successfully.",
-        });
-        
-        navigate("/dashboard");
-      }
+      toast({
+        title: "Success!",
+        description: "You've been signed in successfully.",
+      });
+      
+      // The useEffect will handle redirection
     } catch (error: any) {
       toast({
         title: "Error signing in",
         description: error.message || "An error occurred while signing in",
         variant: "destructive",
       });
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -55,7 +77,7 @@ const SignIn = () => {
   const handleGoogleSignIn = async () => {
     try {
       await signInWithGoogle();
-      navigate("/dashboard");
+      // The useEffect will handle redirection
     } catch (error: any) {
       toast({
         title: "Error",

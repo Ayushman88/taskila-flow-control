@@ -1,24 +1,11 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { 
-  BarChart2, 
-  CheckCircle2, 
-  Clock, 
-  FileText, 
-  List, 
   Search,
   Edit,
   Trash2,
-  KanbanSquare,
-  GanttChartSquare,
-  BookOpen,
   FileUp,
-  BrainCircuit,
-  Timer,
-  GitBranch,
-  Lock,
   Menu
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
@@ -32,12 +19,23 @@ import ScheduleMeetingModal from "@/components/dashboard/ScheduleMeetingModal";
 import CreateWhiteboardModal from "@/components/dashboard/CreateWhiteboardModal";
 import CreateDocumentModal from "@/components/dashboard/CreateDocumentModal";
 import { useAuth } from "@/context/AuthContext";
-import { getUserOrganizations, Organization } from "@/services/dashboard";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/integrations/firebase/client";
 import Sidebar from "@/components/layout/Sidebar";
+
+interface Organization {
+  id: string;
+  name: string;
+  team_size: string;
+  plan: string;
+  subscription_status?: string;
+  created_at: string;
+  updated_at: string;
+}
 
 const DashboardContent = () => {
   const navigate = useNavigate();
-  const { user, profile, signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { projects, deleteProject } = useTaskContext();
@@ -52,21 +50,46 @@ const DashboardContent = () => {
   const [createDocumentOpen, setCreateDocumentOpen] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      loadUserOrganization();
+    if (!user) {
+      navigate("/signin");
+      return;
     }
-  }, [user]);
+    loadUserOrganization();
+  }, [user, navigate]);
 
   const loadUserOrganization = async () => {
     try {
-      if (user) {
-        const organizations = await getUserOrganizations();
-        if (organizations && organizations.length > 0) {
-          setOrganization(organizations[0]);
+      if (!user) return;
+      
+      // Get current organization from localStorage
+      const currentOrgId = localStorage.getItem("currentOrganizationId");
+      
+      if (currentOrgId) {
+        // Fetch organization data from Firestore
+        const orgDoc = await getDoc(doc(db, 'organizations', currentOrgId));
+        
+        if (orgDoc.exists()) {
+          const orgData = orgDoc.data();
+          setOrganization({
+            id: currentOrgId,
+            name: orgData.name,
+            team_size: orgData.team_size,
+            plan: orgData.plan,
+            subscription_status: orgData.subscription_status,
+            created_at: orgData.created_at,
+            updated_at: orgData.updated_at
+          });
+        } else {
+          // Organization not found, redirect to create organization
+          localStorage.removeItem("currentOrganizationId");
+          navigate("/create-organization");
         }
+      } else {
+        // No organization selected, redirect to create organization
+        navigate("/create-organization");
       }
     } catch (error) {
-      console.error("Error loading user organization:", error);
+      console.error("Error loading organization:", error);
       toast({
         title: "Error",
         description: "Failed to load organization data",

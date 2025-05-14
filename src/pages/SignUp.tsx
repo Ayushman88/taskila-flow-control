@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,12 +11,37 @@ import { FcGoogle } from "react-icons/fc";
 
 const SignUp = () => {
   const navigate = useNavigate();
-  const { signUp, signInWithGoogle } = useAuth();
+  const { signUp, signInWithGoogle, user, checkUserOrganization } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+
+  useEffect(() => {
+    if (user && !isRedirecting) {
+      setIsRedirecting(true);
+      handleSuccessfulAuth();
+    }
+  }, [user]);
+
+  const handleSuccessfulAuth = async () => {
+    try {
+      // Check if user has an organization
+      const orgId = await checkUserOrganization();
+      
+      if (orgId) {
+        // User has organization, redirect to dashboard
+        navigate("/dashboard");
+      } else {
+        // User doesn't have organization, redirect to create one
+        navigate("/create-organization");
+      }
+    } catch (error) {
+      console.error("Error during redirection:", error);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,27 +73,23 @@ const SignUp = () => {
       const firstName = nameParts[0];
       const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "";
 
-      const { user } = await signUp(email, password, {
+      await signUp(email, password, {
         first_name: firstName,
         last_name: lastName,
       });
       
-      if (user) {
-        toast({
-          title: "Success!",
-          description: "Your account has been created. Please check your email to verify your account.",
-        });
-        
-        // Navigate to create organization page
-        navigate("/create-organization");
-      }
+      toast({
+        title: "Success!",
+        description: "Your account has been created.",
+      });
+      
+      // The useEffect will handle redirection to create organization
     } catch (error: any) {
       toast({
         title: "Error creating account",
         description: error.message || "An error occurred while creating your account",
         variant: "destructive",
       });
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -76,7 +97,7 @@ const SignUp = () => {
   const handleGoogleSignUp = async () => {
     try {
       await signInWithGoogle();
-      // The redirect will happen automatically
+      // The useEffect will handle redirection
     } catch (error: any) {
       toast({
         title: "Error",

@@ -11,7 +11,7 @@ import {
 } from 'firebase/auth';
 import { auth, db } from '@/integrations/firebase/client';
 import { useNavigate } from 'react-router-dom';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 
 interface Profile {
   id: string;
@@ -31,6 +31,7 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<any>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  checkUserOrganization: () => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -49,16 +50,33 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         // Fetch user profile data
         setTimeout(() => {
           fetchProfile(currentUser.uid);
+          checkAndRedirectUser(currentUser.uid);
         }, 0);
       } else {
         setProfile(null);
+        setIsLoading(false);
       }
-      setIsLoading(false);
     });
 
     // Cleanup subscription
     return () => unsubscribe();
   }, []);
+
+  const checkAndRedirectUser = async (userId: string) => {
+    try {
+      // Check if user has an organization
+      const orgId = await checkUserOrganization();
+      
+      if (orgId) {
+        // User has an organization, set it in localStorage
+        localStorage.setItem("currentOrganizationId", orgId);
+      }
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Error checking user organization:", error);
+      setIsLoading(false);
+    }
+  };
 
   const fetchProfile = async (userId: string) => {
     try {
@@ -75,6 +93,32 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } catch (error) {
       console.error('Error fetching profile:', error);
       setProfile(null);
+    }
+  };
+
+  const checkUserOrganization = async (): Promise<string | null> => {
+    if (!user) return null;
+    
+    try {
+      // Query organization_members collection to find user's organizations
+      const memberQuery = query(
+        collection(db, 'organization_members'),
+        where('user_id', '==', user.uid)
+      );
+      
+      const memberSnapshot = await getDocs(memberQuery);
+      
+      if (!memberSnapshot.empty) {
+        // User has at least one organization
+        const memberDoc = memberSnapshot.docs[0];
+        const organizationId = memberDoc.data().organization_id;
+        return organizationId;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error checking user organization:', error);
+      return null;
     }
   };
 
@@ -159,6 +203,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setUser(null);
       setProfile(null);
       
+      // Clear organization from localStorage
+      localStorage.removeItem("currentOrganizationId");
+      
       // Redirect to home page
       navigate('/');
     } catch (error) {
@@ -175,7 +222,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     signIn,
     signInWithGoogle,
     signOut,
-    refreshProfile
+    refreshProfile,
+    checkUserOrganization
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

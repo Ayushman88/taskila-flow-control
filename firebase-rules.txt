@@ -11,15 +11,19 @@ service cloud.firestore {
     // Profiles collection
     match /profiles/{userId} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow create, update: if request.auth != null && request.auth.uid == userId;
     }
     
     // Organizations collection
     match /organizations/{organizationId} {
       // Allow read if user is authenticated and is a member of the organization
-      allow read: if request.auth != null;
+      allow read: if request.auth != null && (
+        exists(/databases/$(database)/documents/organization_members/$(request.auth.uid + '_' + organizationId))
+      );
+      
       // Allow create if user is authenticated
       allow create: if request.auth != null;
+      
       // Allow update, delete if user is admin of the organization
       allow update, delete: if request.auth != null && isOrgAdmin(organizationId);
       
@@ -46,37 +50,36 @@ service cloud.firestore {
     
     // Projects collection
     match /projects/{projectId} {
-      allow read: if request.auth != null && canAccessProject(projectId);
-      allow create: if request.auth != null && canAccessOrg(request.resource.data.organization_id);
-      allow update, delete: if request.auth != null && canAccessProject(projectId);
-      
-      function canAccessProject(projId) {
-        let project = get(/databases/$(database)/documents/projects/$(projId));
-        return canAccessOrg(project.data.organization_id);
-      }
-      
-      function canAccessOrg(orgId) {
-        return exists(/databases/$(database)/documents/organization_members/$(request.auth.uid + '_' + orgId));
-      }
+      allow create: if request.auth != null;
+      allow read, update, delete: if request.auth != null && 
+        (request.auth.uid == resource.data.createdBy || 
+         exists(/databases/$(database)/documents/organization_members/$(request.auth.uid + '_' + resource.data.organization_id)));
     }
     
-    // Files collection (replacing Storage with Firestore)
+    // Files collection (storing files in Firestore)
     match /files/{fileId} {
-      allow read: if request.auth != null && canAccessFileOrg();
-      allow create: if request.auth != null && canAccessFileOrg();
-      allow update, delete: if request.auth != null && 
-                          (resource.data.uploadedBy == request.auth.uid || 
-                           isOrgAdmin(resource.data.organizationId));
+      allow read: if request.auth != null && 
+        (request.auth.uid == resource.data.uploadedBy || 
+         exists(/databases/$(database)/documents/organization_members/$(request.auth.uid + '_' + resource.data.organizationId)));
+         
+      allow create: if request.auth != null;
       
-      function canAccessFileOrg() {
-        return request.resource.data.organizationId == null || 
-               exists(/databases/$(database)/documents/organization_members/$(request.auth.uid + '_' + request.resource.data.organizationId));
-      }
+      allow update, delete: if request.auth != null && 
+        (request.auth.uid == resource.data.uploadedBy || 
+         isOrgAdmin(resource.data.organizationId));
       
       function isOrgAdmin(orgId) {
         return exists(/databases/$(database)/documents/organization_members/$(request.auth.uid + '_' + orgId)) &&
                get(/databases/$(database)/documents/organization_members/$(request.auth.uid + '_' + orgId)).data.role == "admin";
       }
+    }
+    
+    // Tasks collection
+    match /tasks/{taskId} {
+      allow create: if request.auth != null;
+      allow read, update, delete: if request.auth != null && 
+        (request.auth.uid == resource.data.createdBy || 
+         exists(/databases/$(database)/documents/organization_members/$(request.auth.uid + '_' + resource.data.organization_id)));
     }
   }
 }

@@ -1,5 +1,6 @@
 
-// This will be replaced by a fixed calendar component
+"use client"
+
 import * as React from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { DayPicker } from "react-day-picker"
