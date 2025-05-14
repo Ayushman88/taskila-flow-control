@@ -12,13 +12,12 @@ const StatCounter: React.FC<StatCounterProps> = ({ end }) => {
     <CountUp
       start={0}
       end={end}
-      duration={2.5}
       className="text-7xl font-semibold"
     />
   );
 };
 
-export const Bento: React.FC = () => {
+const Bento: React.FC = () => {
   return (
     <div className="min-h-screen p-10 pt-20 flex flex-col gap-10 bg-white dark:bg-slate-900 dark:text-white">
       {/* Top Section */}

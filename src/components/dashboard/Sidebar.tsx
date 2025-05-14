@@ -14,17 +14,21 @@ import {
   BookOpen,
   Clock
 } from "lucide-react";
+import { Organization } from "@/services/dashboard";
 
 interface SidebarProps {
-  organizationName: string;
-  organizationPlan: string;
-  onLogout: () => void;
+  organization: Organization;
   isMenuOpen: boolean;
+  toggleMenu?: () => void;
+  handleLogout?: () => void;
 }
 
-const Sidebar = ({ organizationName, organizationPlan, onLogout, isMenuOpen }: SidebarProps) => {
+const Sidebar = ({ organization, isMenuOpen, handleLogout }: SidebarProps) => {
   const location = useLocation();
   const currentPath = location.pathname;
+  
+  const organizationName = organization?.name || "Organization";
+  const organizationPlan = organization?.plan || "Free";
 
   const isActive = (path: string) => {
     return currentPath === path;
@@ -128,10 +132,10 @@ const Sidebar = ({ organizationName, organizationPlan, onLogout, isMenuOpen }: S
               <span>Settings</span>
             </Link>
           </li>
-          {onLogout && (
+          {handleLogout && (
             <li>
               <button
-                onClick={onLogout}
+                onClick={handleLogout}
                 className="w-full flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors"
               >
                 <LogOut className="h-5 w-5" />

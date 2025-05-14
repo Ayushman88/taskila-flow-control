@@ -128,15 +128,17 @@ const Sidebar = ({ organizationName, organizationPlan, onLogout, isMenuOpen }: S
               <span>Settings</span>
             </Link>
           </li>
-          <li>
-            <button
-              onClick={onLogout}
-              className="w-full flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors"
-            >
-              <LogOut className="h-5 w-5" />
-              <span>Logout</span>
-            </button>
-          </li>
+          {onLogout && (
+            <li>
+              <button
+                onClick={onLogout}
+                className="w-full flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors"
+              >
+                <LogOut className="h-5 w-5" />
+                <span>Logout</span>
+              </button>
+            </li>
+          )}
         </ul>
       </nav>
     </aside>
