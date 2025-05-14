@@ -286,12 +286,15 @@ const TaskListContent = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      <Sidebar 
-        organization={organization} 
+      {/* Left sidebar */}
+      <Sidebar
+        organization={organization.name}
+        plan={organization.plan}
+        onLogout={handleLogout}
         isMenuOpen={isMenuOpen}
-        handleLogout={handleLogout}
       />
-
+      
+      {/* Main content */}
       <main className="flex-1">
         <header className="bg-white p-4 shadow-sm flex justify-between items-center sticky top-0 z-10">
           <div className="flex items-center">

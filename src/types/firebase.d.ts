@@ -51,14 +51,8 @@ declare module 'firebase/firestore' {
   export function setDoc(reference: any, data: any, options?: any): Promise<void>;
   export function addDoc(reference: any, data: any): Promise<any>;
   export function updateDoc(reference: any, data: any): Promise<void>;
+  export function deleteDoc(reference: any): Promise<void>;
   export function query(query: any, ...queryConstraints: any[]): any;
   export function where(fieldPath: string | any, opStr: string, value: any): any;
   export function connectFirestoreEmulator(firestore: any, host: string, port: number): void;
 }
-
-declare module 'firebase/storage' {
-  export * from '@firebase/storage';
-  export function getStorage(app?: any): any;
-  export function connectStorageEmulator(storage: any, host: string, port: number): void;
-}
-
