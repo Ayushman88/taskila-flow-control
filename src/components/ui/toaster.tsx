@@ -1,3 +1,4 @@
+
 import * as React from "react";
 import {
   Toast,
@@ -7,10 +8,10 @@ import {
   ToastTitle,
   ToastViewport,
 } from "@/components/ui/toast";
-import { toast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 export function Toaster() {
-  const { toasts = [] } = toast();
+  const { toasts = [] } = useToast();
 
   return (
     <ToastProvider>

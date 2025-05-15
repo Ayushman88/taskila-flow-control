@@ -1,23 +1,5 @@
-import * as ToastPrimitive from "@radix-ui/react-toast";
 
-export interface Toast {
-  id: string;
-  title?: React.ReactNode;
-  description?: React.ReactNode;
-  action?: ToastActionElement;
-  variant?: "default" | "destructive";
-}
+import { useToast, toast } from "@/hooks/use-toast";
+import type { Toast, ToastActionElement } from "@/components/ui/toast";
 
-export type ToastActionElement = React.ReactElement<
-  typeof ToastPrimitive.Action
->;
-
-const toasts: Toast[] = []; // Example array of toasts
-
-export function useToast() {
-  return {
-    toasts,
-  };
-}
-
-export { useToast as toast };
+export { type Toast, type ToastActionElement, useToast, toast };

@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTaskContext } from "@/context/TaskContext";
 import { useAuth } from "@/context/AuthContext";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 interface CreateProjectModalProps {
   open: boolean;
@@ -54,7 +54,6 @@ const CreateProjectModal = ({ open, onOpenChange }: CreateProjectModalProps) => 
         progress: 0,
         dueDate,
         // createdAt field is automatically added by the addProject function
-        // so we don't need to include it here
       });
       
       toast({
