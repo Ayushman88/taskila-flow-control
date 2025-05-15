@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -74,7 +73,12 @@ const CreateOrganization = () => {
         JSON.stringify({
           name: organizationName,
           teamSize,
-          plan: teamSize === "small" ? "Free" : teamSize === "medium" ? "Pro" : "Enterprise",
+          plan:
+            teamSize === "small"
+              ? "Free"
+              : teamSize === "medium"
+              ? "Pro"
+              : "Enterprise",
         })
       );
 
@@ -91,25 +95,28 @@ const CreateOrganization = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container max-w-5xl mx-auto p-4 py-12 space-y-8">
-        <Button
-          variant="ghost"
-          onClick={() => navigate("/")}
-          className="mb-6"
-        >
+        <Button variant="ghost" onClick={() => navigate("/")} className="mb-6">
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to home
         </Button>
 
-        <div className="space-y-6">
+        <div className="space-y-6n">
           <div className="space-y-2 text-center">
-            <h1 className="text-3xl font-bold tracking-tight">Create Your Organization</h1>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Create Your Organization
+            </h1>
             <p className="text-muted-foreground">
               Choose a plan that best fits your team's needs
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-8">
-            <div className="space-y-2">
-              <Label htmlFor="organization-name">Organization Name</Label>
+          <form
+            onSubmit={handleSubmit}
+            className="space-y-8 flex flex-col justify-center mt-10"
+          >
+            <div className="space-y-2 flex flex-col gap-4 justify-center items-center">
+              <Label htmlFor="organization-name text-center">
+                Organization Name
+              </Label>
               <Input
                 id="organization-name"
                 placeholder="Enter organization name"
@@ -133,13 +140,17 @@ const CreateOrganization = () => {
                     (teamSize === "medium" && idx === 1) ||
                     (teamSize === "large" && idx === 2)
                   }
-                  onClick={() => setTeamSize(idx === 0 ? "small" : idx === 1 ? "medium" : "large")}
+                  onClick={() =>
+                    setTeamSize(
+                      idx === 0 ? "small" : idx === 1 ? "medium" : "large"
+                    )
+                  }
                 />
               ))}
             </div>
 
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="w-full max-w-md mx-auto"
               disabled={isSubmitting}
             >

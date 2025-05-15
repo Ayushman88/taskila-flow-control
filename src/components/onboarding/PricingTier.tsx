@@ -1,4 +1,3 @@
-
 import React from "react";
 import { cn } from "@/lib/utils";
 import { Check } from "lucide-react";
@@ -33,10 +32,13 @@ const PricingTier: React.FC<PricingTierProps> = ({
       )}
     >
       <div className="space-y-4">
-        <Badge variant={isSelected ? "default" : "secondary"} className="uppercase">
+        <Badge
+          variant={isSelected ? "default" : "secondary"}
+          className="uppercase"
+        >
           {plan}
         </Badge>
-        
+
         <div>
           <p className="text-2xl font-bold">{price}</p>
           <p className="text-muted-foreground">{teamSize}</p>
