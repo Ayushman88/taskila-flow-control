@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { TaskProvider, useTaskContext, Task } from "@/context/TaskContext";
@@ -26,12 +27,13 @@ import {
   AlertTriangle,
   Filter
 } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/components/ui/use-toast";
 import { v4 as uuidv4 } from 'uuid';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useAuth } from "@/context/AuthContext";
 
 interface Organization {
   name: string;
@@ -113,6 +115,8 @@ const KanbanBoardContent = () => {
     updateTask,
     getTasksByStatus 
   } = useTaskContext();
+  
+  const { user, currentOrganization } = useAuth();
 
   const todoTasks = getTasksByStatus("To Do");
   const inProgressTasks = getTasksByStatus("In Progress");
@@ -174,33 +178,49 @@ const KanbanBoardContent = () => {
       });
       return;
     }
+    
+    // Make sure we have the organization ID and user ID
+    const orgId = localStorage.getItem("currentOrganizationId");
+    if (!orgId || !user) {
+      toast({
+        title: "Error",
+        description: "Authentication issue. Please log in again.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    const newTask: Task = {
-      id: uuidv4(),
+    const newTask = {
       title: newTaskTitle,
       description: newTaskDescription,
       status: newTaskStatus,
       priority: newTaskPriority,
       dueDate: newTaskDueDate,
       projectId: newTaskProject,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
     };
 
-    addTask(newTask);
-    
-    // Reset form
-    setNewTaskTitle("");
-    setNewTaskDescription("");
-    setNewTaskPriority("Medium");
-    setNewTaskStatus("To Do");
-    
-    setIsNewTaskDialogOpen(false);
-    
-    toast({
-      title: "Task created",
-      description: "Your new task has been added to the board."
-    });
+    addTask(newTask)
+      .then(() => {
+        // Reset form
+        setNewTaskTitle("");
+        setNewTaskDescription("");
+        setNewTaskPriority("Medium");
+        setNewTaskStatus("To Do");
+        setIsNewTaskDialogOpen(false);
+        
+        toast({
+          title: "Task created",
+          description: "Your new task has been added to the board."
+        });
+      })
+      .catch(error => {
+        console.error("Error adding task:", error);
+        toast({
+          title: "Error",
+          description: "Failed to create task. Please try again.",
+          variant: "destructive",
+        });
+      });
   };
 
   const toggleMenu = () => {
@@ -223,7 +243,7 @@ const KanbanBoardContent = () => {
     });
   };
 
-  const handleAddTask = async (formData: any) => {
+  const handleAddTask = async () => {
     try {
       if (!selectedProject) {
         toast({
@@ -234,19 +254,36 @@ const KanbanBoardContent = () => {
         return;
       }
       
-      const newTask = await addTask({
-        title: formData.title,
-        description: formData.description || "",
-        status: formData.status || "To Do",
-        priority: formData.priority || "Medium",
-        dueDate: formData.dueDate || new Date().toISOString(),
-        projectId: selectedProject,
-        // These fields will be added by the addTask function automatically
-        // createdBy: user.uid,
-        // organization_id: currentOrgId
+      if (!newTaskTitle.trim()) {
+        toast({
+          title: "Error",
+          description: "Task title cannot be empty",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Make sure we have the organization ID and user ID
+      const orgId = localStorage.getItem("currentOrganizationId");
+      if (!orgId || !user) {
+        toast({
+          title: "Error",
+          description: "Authentication issue. Please log in again.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      await addTask({
+        title: newTaskTitle,
+        description: newTaskDescription,
+        status: newTaskStatus,
+        priority: newTaskPriority,
+        dueDate: newTaskDueDate,
+        projectId: newTaskProject,
       });
       
-      setDialogOpen(false);
+      setIsNewTaskDialogOpen(false);
       toast({
         title: "Task Created",
         description: "Task created successfully",
@@ -474,7 +511,7 @@ const KanbanBoardContent = () => {
                       Cancel
                     </Button>
                     <Button 
-                      onClick={handleAddTask}
+                      onClick={handleNewTask}
                       className="bg-gradient-to-r from-indigo-500 to-purple-600"
                     >
                       Create Task
