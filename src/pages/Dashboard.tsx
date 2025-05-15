@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -31,27 +30,16 @@ import ScheduleMeetingModal from "@/components/dashboard/ScheduleMeetingModal";
 import CreateWhiteboardModal from "@/components/dashboard/CreateWhiteboardModal";
 import CreateDocumentModal from "@/components/dashboard/CreateDocumentModal";
 import { useAuth } from "@/context/AuthContext";
-import { doc, getDoc, collection, addDoc, serverTimestamp, query, where, getDocs } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/integrations/firebase/client";
 import Sidebar from "@/components/layout/Sidebar";
 import DashboardChatBot from "@/components/dashboard/DashboardChatBot";
 
-interface Organization {
-  id: string;
-  name: string;
-  team_size: string;
-  plan: string;
-  subscription_status?: string;
-  created_at: string;
-  updated_at: string;
-}
-
 const DashboardContent = () => {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
-  const [organization, setOrganization] = useState<Organization | null>(null);
+  const { user, signOut, currentOrganization, organizations, loadUserOrganizations } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { projects, deleteProject } = useTaskContext();
+  const { projects, deleteProject, refreshData, isLoading: isTasksLoading } = useTaskContext();
   const [loading, setLoading] = useState(true);
   
   // Modal states
@@ -67,51 +55,43 @@ const DashboardContent = () => {
       navigate("/signin");
       return;
     }
-    loadUserOrganization();
-  }, [user, navigate]);
 
-  const loadUserOrganization = async () => {
-    try {
-      if (!user) return;
-      
-      // Get current organization from localStorage
-      const currentOrgId = localStorage.getItem("currentOrganizationId");
-      
-      if (currentOrgId) {
-        // Fetch organization data from Firestore
-        const orgDoc = await getDoc(doc(db, 'organizations', currentOrgId));
-        
-        if (orgDoc.exists()) {
-          const orgData = orgDoc.data();
-          setOrganization({
-            id: currentOrgId,
-            name: orgData.name,
-            team_size: orgData.team_size,
-            plan: orgData.plan,
-            subscription_status: orgData.subscription_status,
-            created_at: orgData.created_at,
-            updated_at: orgData.updated_at
-          });
-        } else {
-          // Organization not found, redirect to create organization
-          localStorage.removeItem("currentOrganizationId");
-          navigate("/create-organization");
+    async function loadData() {
+      try {
+        // Load organizations if not already loaded
+        if (!organizations || organizations.length === 0) {
+          await loadUserOrganizations();
         }
-      } else {
-        // No organization selected, redirect to create organization
-        navigate("/create-organization");
+        
+        // Get current organization from localStorage
+        const currentOrgId = localStorage.getItem("currentOrganizationId");
+        
+        if (currentOrgId) {
+          // Load tasks and projects for this organization
+          await refreshData();
+        } else if (organizations && organizations.length > 0) {
+          // If no organization selected but user has organizations, select the first one
+          localStorage.setItem("currentOrganizationId", organizations[0].id);
+          await refreshData();
+        } else {
+          // No organizations available, redirect to create one
+          navigate("/create-organization");
+          return;
+        }
+      } catch (error) {
+        console.error("Error loading dashboard data:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load organization data",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("Error loading organization:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load organization data",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
     }
-  };
+
+    loadData();
+  }, [user, organizations.length]);
   
   const handleLogout = async () => {
     try {
@@ -135,7 +115,7 @@ const DashboardContent = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
-  if (loading) {
+  if (loading || isTasksLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="h-16 w-16 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent"></div>
@@ -143,7 +123,7 @@ const DashboardContent = () => {
     );
   }
 
-  if (!organization) {
+  if (!currentOrganization) {
     return (
       <div className="min-h-screen bg-gray-50 p-8 flex flex-col items-center justify-center">
         <div className="max-w-md mx-auto text-center">
@@ -155,6 +135,16 @@ const DashboardContent = () => {
           >
             Create Organization
           </Button>
+          <p className="mt-4 text-gray-600">
+            Or join an existing organization:
+          </p>
+          <Button 
+            onClick={() => navigate('/join-organization')}
+            variant="outline"
+            className="mt-2"
+          >
+            Join Organization
+          </Button>
         </div>
       </div>
     );
@@ -164,8 +154,8 @@ const DashboardContent = () => {
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
       <Sidebar 
-        organizationName={organization.name} 
-        organizationPlan={organization.plan} 
+        organizationName={currentOrganization.name} 
+        organizationPlan={currentOrganization.plan} 
         onLogout={handleLogout}
         isMenuOpen={isMenuOpen}
       />
@@ -191,7 +181,23 @@ const DashboardContent = () => {
                 />
               </div>
             </div>
-            <div className="text-sm text-gray-600 hidden md:block">{user?.email}</div>
+            <div className="text-sm text-gray-600 hidden md:block">
+              {user?.email} 
+              {organizations.length > 1 && (
+                <select 
+                  className="ml-2 border rounded p-1 text-sm"
+                  value={currentOrganization?.id}
+                  onChange={(e) => {
+                    localStorage.setItem("currentOrganizationId", e.target.value);
+                    window.location.reload();
+                  }}
+                >
+                  {organizations.map(org => (
+                    <option key={org.id} value={org.id}>{org.name}</option>
+                  ))}
+                </select>
+              )}
+            </div>
             <Button variant="outline" size="sm" onClick={handleLogout}>
               <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
               Logout
@@ -475,7 +481,7 @@ const DashboardContent = () => {
                 className="h-auto py-6 justify-start border-indigo-200 text-indigo-700 hover:bg-indigo-50 w-full"
                 onClick={() => setScheduleMeetingOpen(true)}
               >
-                <svg className="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                <svg className="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                 Schedule Meeting
               </Button>
               <Button 
@@ -562,7 +568,7 @@ const DashboardContent = () => {
       />
 
       {/* ChatBot */}
-      {organization && <DashboardChatBot organizationId={organization.id} />}
+      {currentOrganization && <DashboardChatBot organizationId={currentOrganization.id} />}
     </div>
   );
 };

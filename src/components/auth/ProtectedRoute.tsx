@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 
@@ -8,8 +8,17 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, organizations, loadUserOrganizations } = useAuth();
   const location = useLocation();
+  const [orgsLoaded, setOrgsLoaded] = React.useState(false);
+
+  useEffect(() => {
+    if (user && !orgsLoaded) {
+      loadUserOrganizations().then(() => {
+        setOrgsLoaded(true);
+      });
+    }
+  }, [user, orgsLoaded]);
 
   if (isLoading) {
     // Loading spinner
@@ -23,6 +32,19 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   if (!user) {
     // Redirect to signin page if not authenticated
     return <Navigate to="/signin" state={{ from: location }} replace />;
+  }
+
+  // Check if current page is dashboard-related but not organization creation
+  const isDashboardPage = !location.pathname.includes('/create-organization') && 
+                          !location.pathname.includes('/join-organization') &&
+                          location.pathname !== '/signin' && 
+                          location.pathname !== '/signup' &&
+                          location.pathname !== '/';
+
+  // If it's a dashboard page and we've loaded orgs, check if user has an organization
+  if (isDashboardPage && orgsLoaded && (!organizations || organizations.length === 0)) {
+    // If no organization, redirect to create organization
+    return <Navigate to="/create-organization" replace />;
   }
 
   return <>{children}</>;

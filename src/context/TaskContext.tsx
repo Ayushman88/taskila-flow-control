@@ -73,13 +73,13 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useAuth();
+  const { user, currentOrganization } = useAuth();
 
   useEffect(() => {
     if (user) {
       loadData();
     }
-  }, [user]);
+  }, [user, currentOrganization]);
 
   const loadData = async () => {
     if (!user) return;
@@ -94,6 +94,8 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
+      console.log("Loading data for organization:", orgId);
+
       // Load tasks
       const tasksQuery = query(
         collection(db, 'tasks'),
@@ -107,6 +109,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
       });
       
       setTasks(loadedTasks);
+      console.log("Loaded tasks:", loadedTasks.length);
 
       // Load projects
       const projectsQuery = query(
@@ -121,6 +124,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
       });
       
       setProjects(loadedProjects);
+      console.log("Loaded projects:", loadedProjects.length);
     } catch (error) {
       console.error("Error loading data from Firestore:", error);
     } finally {
