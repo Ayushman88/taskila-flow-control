@@ -512,7 +512,7 @@ const DashboardContent = () => {
                 <CheckCircle2 className="h-6 w-6 text-green-500 mr-3 flex-shrink-0 mt-0.5" />
                 <div>
                   <h3 className="font-medium">Create your organization</h3>
-                  <p className="text-gray-500">You've created {organization.name}</p>
+                  <p className="text-gray-500">You've created {currentOrganization?.name}</p>
                 </div>
               </div>
               

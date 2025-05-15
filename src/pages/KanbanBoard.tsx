@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { TaskProvider, useTaskContext, Task } from "@/context/TaskContext";
@@ -105,6 +104,7 @@ const KanbanBoardContent = () => {
   const [newTaskDueDate, setNewTaskDueDate] = useState("");
   const [newTaskProject, setNewTaskProject] = useState("");
   const [newTaskStatus, setNewTaskStatus] = useState<"To Do" | "In Progress" | "In Review" | "Done">("To Do");
+  const [selectedProject, setSelectedProject] = useState<string | null>(null);
   
   const { 
     tasks, 
@@ -221,6 +221,44 @@ const KanbanBoardContent = () => {
       title: "Task updated",
       description: `Task moved to ${status}`
     });
+  };
+
+  const handleAddTask = async (formData: any) => {
+    try {
+      if (!selectedProject) {
+        toast({
+          title: "Error",
+          description: "Please select a project first",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const newTask = await addTask({
+        title: formData.title,
+        description: formData.description || "",
+        status: formData.status || "To Do",
+        priority: formData.priority || "Medium",
+        dueDate: formData.dueDate || new Date().toISOString(),
+        projectId: selectedProject,
+        // These fields will be added by the addTask function automatically
+        // createdBy: user.uid,
+        // organization_id: currentOrgId
+      });
+      
+      setDialogOpen(false);
+      toast({
+        title: "Task Created",
+        description: "Task created successfully",
+      });
+    } catch (error) {
+      console.error("Error adding task:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create task",
+        variant: "destructive",
+      });
+    }
   };
 
   if (!organization) return <div className="p-8">Loading...</div>;
@@ -436,7 +474,7 @@ const KanbanBoardContent = () => {
                       Cancel
                     </Button>
                     <Button 
-                      onClick={handleNewTask}
+                      onClick={handleAddTask}
                       className="bg-gradient-to-r from-indigo-500 to-purple-600"
                     >
                       Create Task

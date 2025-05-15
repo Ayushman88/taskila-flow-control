@@ -1,6 +1,5 @@
-
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
-import { collection, addDoc, updateDoc, deleteDoc, getDocs, doc, query, where, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, updateDoc, deleteDoc, getDocs, doc, query, where } from "firebase/firestore";
 import { db } from "@/integrations/firebase/client";
 import { useAuth } from "@/context/AuthContext";
 

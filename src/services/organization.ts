@@ -1,4 +1,3 @@
-
 import { db } from "@/integrations/firebase/client";
 import { 
   collection, 
@@ -7,7 +6,6 @@ import {
   getDocs, 
   query, 
   where, 
-  serverTimestamp, 
   addDoc, 
   updateDoc,
   setDoc
