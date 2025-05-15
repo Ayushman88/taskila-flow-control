@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "@/hooks/use-toast";
@@ -70,7 +69,6 @@ const CreateDocumentModal = ({ open, onOpenChange }: CreateDocumentModalProps) =
       toast({
         title: "Error",
         description: "Document name is required",
-        variant: "destructive",
       });
       return;
     }

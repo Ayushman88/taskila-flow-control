@@ -1,6 +1,5 @@
-
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -30,7 +29,6 @@ const CreateProjectModal = ({ open, onOpenChange }: CreateProjectModalProps) => 
       toast({
         title: "Missing fields",
         description: "Please fill in all required fields",
-        variant: "destructive",
       });
       return;
     }
@@ -39,7 +37,6 @@ const CreateProjectModal = ({ open, onOpenChange }: CreateProjectModalProps) => 
       toast({
         title: "Auth Error",
         description: "You must be logged in to create a project",
-        variant: "destructive",
       });
       return;
     }
@@ -53,7 +50,6 @@ const CreateProjectModal = ({ open, onOpenChange }: CreateProjectModalProps) => 
         status,
         progress: 0,
         dueDate,
-        // createdAt field is automatically added by the addProject function
       });
       
       toast({
@@ -71,7 +67,6 @@ const CreateProjectModal = ({ open, onOpenChange }: CreateProjectModalProps) => 
       toast({
         title: "Error",
         description: "Failed to create project. Please try again.",
-        variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);

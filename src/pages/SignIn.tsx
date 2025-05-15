@@ -50,7 +50,6 @@ const SignIn = () => {
       toast({
         title: "Error",
         description: "Please enter both email and password",
-        variant: "destructive",
       });
       setIsSubmitting(false);
       return;
@@ -69,7 +68,6 @@ const SignIn = () => {
       toast({
         title: "Error signing in",
         description: error.message || "An error occurred while signing in",
-        variant: "destructive",
       });
       setIsSubmitting(false);
     }
@@ -83,7 +81,6 @@ const SignIn = () => {
       toast({
         title: "Error",
         description: error.message || "Failed to sign in with Google",
-        variant: "destructive",
       });
     }
   };
