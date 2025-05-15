@@ -1,47 +1,19 @@
 
-import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { useAuth } from "@/context/AuthContext";
-import { FcGoogle } from "react-icons/fc";
 
 const SignIn = () => {
   const navigate = useNavigate();
-  const { signIn, signInWithGoogle, checkUserOrganization, user } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isRedirecting, setIsRedirecting] = useState(false);
 
-  useEffect(() => {
-    if (user && !isRedirecting) {
-      setIsRedirecting(true);
-      handleSuccessfulAuth();
-    }
-  }, [user]);
-
-  const handleSuccessfulAuth = async () => {
-    try {
-      // Check if user has an organization
-      const orgId = await checkUserOrganization();
-      
-      if (orgId) {
-        // User has organization, redirect to dashboard
-        navigate("/dashboard");
-      } else {
-        // User doesn't have organization, redirect to create one
-        navigate("/create-organization");
-      }
-    } catch (error) {
-      console.error("Error during redirection:", error);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
@@ -55,36 +27,20 @@ const SignIn = () => {
       return;
     }
 
-    try {
-      await signIn(email, password);
+    // Simulate API call
+    setTimeout(() => {
+      // Store user info (in a real app, this would validate against a database)
+      localStorage.setItem("user", JSON.stringify({ email }));
       
       toast({
         title: "Success!",
         description: "You've been signed in successfully.",
       });
-      
-      // The useEffect will handle redirection
-    } catch (error: any) {
-      toast({
-        title: "Error signing in",
-        description: error.message || "An error occurred while signing in",
-        variant: "destructive",
-      });
-      setIsSubmitting(false);
-    }
-  };
 
-  const handleGoogleSignIn = async () => {
-    try {
-      await signInWithGoogle();
-      // The useEffect will handle redirection
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to sign in with Google",
-        variant: "destructive",
-      });
-    }
+      // Redirect to dashboard
+      navigate("/dashboard");
+      setIsSubmitting(false);
+    }, 1000);
   };
 
   return (
@@ -141,30 +97,15 @@ const SignIn = () => {
                 {isSubmitting ? "Signing in..." : "Sign In"}
               </Button>
               
-              <div className="relative flex items-center justify-center mt-4">
-                <div className="border-t border-gray-300 flex-grow"></div>
-                <div className="mx-4 text-sm text-gray-500">OR</div>
-                <div className="border-t border-gray-300 flex-grow"></div>
-              </div>
-              
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full border border-gray-300 flex items-center justify-center gap-2"
-                onClick={handleGoogleSignIn}
-              >
-                <FcGoogle className="h-5 w-5" />
-                Sign in with Google
-              </Button>
-              
               <div className="text-center text-sm text-gray-600">
                 Don't have an account?{" "}
-                <Link 
-                  to="/signup"
+                <button 
+                  type="button"
                   className="text-indigo-600 hover:text-indigo-800 font-medium"
+                  onClick={() => navigate("/signup")}
                 >
                   Sign Up
-                </Link>
+                </button>
               </div>
             </div>
           </form>

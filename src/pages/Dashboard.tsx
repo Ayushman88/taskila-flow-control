@@ -1,23 +1,32 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { 
+  BarChart2, 
+  CheckCircle2, 
+  Clock, 
+  FileText, 
+  List, 
+  LogOut, 
+  PlusCircle, 
+  Settings, 
+  Users,
+  Calendar,
+  FileImage,
+  MessageSquare,
   Search,
   Edit,
   Trash2,
-  FileUp,
-  Menu,
-  List,
-  FileText,
-  Clock,
   KanbanSquare,
-  Timer,
-  BarChart2,
+  GanttChartSquare,
+  BookOpen,
+  FileUp,
   BrainCircuit,
+  Timer,
   GitBranch,
   Lock,
-  BookOpen,
-  CheckCircle2
+  Menu
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,28 +38,19 @@ import InviteTeamModal from "@/components/dashboard/InviteTeamModal";
 import ScheduleMeetingModal from "@/components/dashboard/ScheduleMeetingModal";
 import CreateWhiteboardModal from "@/components/dashboard/CreateWhiteboardModal";
 import CreateDocumentModal from "@/components/dashboard/CreateDocumentModal";
-import { useAuth } from "@/context/AuthContext";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/integrations/firebase/client";
-import Sidebar from "@/components/layout/Sidebar";
 
 interface Organization {
-  id: string;
   name: string;
-  team_size: string;
+  teamSize: string;
   plan: string;
-  subscription_status?: string;
-  created_at: string;
-  updated_at: string;
 }
 
 const DashboardContent = () => {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
   const [organization, setOrganization] = useState<Organization | null>(null);
+  const [userEmail, setUserEmail] = useState<string>("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { projects, deleteProject } = useTaskContext();
-  const [loading, setLoading] = useState(true);
   
   // Modal states
   const [createProjectOpen, setCreateProjectOpen] = useState(false);
@@ -61,62 +61,30 @@ const DashboardContent = () => {
   const [createDocumentOpen, setCreateDocumentOpen] = useState(false);
 
   useEffect(() => {
-    if (!user) {
+    // Check if user is logged in
+    const userStr = localStorage.getItem("user");
+    if (!userStr) {
       navigate("/signin");
       return;
     }
-    loadUserOrganization();
-  }, [user, navigate]);
-
-  const loadUserOrganization = async () => {
-    try {
-      if (!user) return;
-      
-      // Get current organization from localStorage
-      const currentOrgId = localStorage.getItem("currentOrganizationId");
-      
-      if (currentOrgId) {
-        // Fetch organization data from Firestore
-        const orgDoc = await getDoc(doc(db, 'organizations', currentOrgId));
-        
-        if (orgDoc.exists()) {
-          const orgData = orgDoc.data();
-          setOrganization({
-            id: currentOrgId,
-            name: orgData.name,
-            team_size: orgData.team_size,
-            plan: orgData.plan,
-            subscription_status: orgData.subscription_status,
-            created_at: orgData.created_at,
-            updated_at: orgData.updated_at
-          });
-        } else {
-          // Organization not found, redirect to create organization
-          localStorage.removeItem("currentOrganizationId");
-          navigate("/create-organization");
-        }
-      } else {
-        // No organization selected, redirect to create organization
-        navigate("/create-organization");
-      }
-    } catch (error) {
-      console.error("Error loading organization:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load organization data",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+    
+    const user = JSON.parse(userStr);
+    setUserEmail(user.email);
+    
+    // Get organization data
+    const orgStr = localStorage.getItem("organization");
+    if (orgStr) {
+      setOrganization(JSON.parse(orgStr));
     }
-  };
+  }, [navigate]);
   
-  const handleLogout = async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      console.error("Error signing out:", error);
-    }
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    toast({
+      title: "Logged out",
+      description: "You have been successfully logged out."
+    });
+    navigate("/");
   };
 
   const handleDeleteProject = (id: string, name: string) => {
@@ -133,40 +101,81 @@ const DashboardContent = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
-  if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="h-16 w-16 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent"></div>
-      </div>
-    );
-  }
-
-  if (!organization) {
-    return (
-      <div className="min-h-screen bg-gray-50 p-8 flex flex-col items-center justify-center">
-        <div className="max-w-md mx-auto text-center">
-          <h2 className="text-2xl font-bold mb-4">No Organization Found</h2>
-          <p className="mb-6 text-gray-600">You don't seem to have an organization yet. Create one to get started.</p>
-          <Button 
-            onClick={() => navigate('/create-organization')}
-            className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700"
-          >
-            Create Organization
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  if (!organization) return <div className="p-8">Loading...</div>;
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      <Sidebar 
-        organizationName={organization.name} 
-        organizationPlan={organization.plan} 
-        onLogout={handleLogout}
-        isMenuOpen={isMenuOpen}
-      />
+      {/* Sidebar - hidden on mobile unless toggled */}
+      <aside className={`${isMenuOpen ? 'block' : 'hidden'} md:block w-64 bg-gradient-to-b from-indigo-800 to-purple-900 text-white fixed md:static h-screen z-50 transition-all duration-300 ease-in-out`}>
+        <div className="p-4 border-b border-indigo-700">
+          <h2 className="text-xl font-bold">{organization.name}</h2>
+          <p className="text-sm text-indigo-200">{organization.plan} Plan</p>
+        </div>
+        <nav className="p-2">
+          <ul className="space-y-1">
+            <li>
+              <Link to="/dashboard" className="flex items-center space-x-3 px-3 py-2 rounded-md bg-indigo-700 text-white font-medium">
+                <BarChart2 className="h-5 w-5" />
+                <span>Dashboard</span>
+              </Link>
+            </li>
+            <li>
+              <Link to="/kanban" className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors">
+                <KanbanSquare className="h-5 w-5" />
+                <span>Kanban Board</span>
+              </Link>
+            </li>
+            <li>
+              <Link to="/gantt" className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors">
+                <GanttChartSquare className="h-5 w-5" />
+                <span>Gantt Chart</span>
+              </Link>
+            </li>
+            <li>
+              <Link to="/tasks" className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors">
+                <List className="h-5 w-5" />
+                <span>Task List</span>
+              </Link>
+            </li>
+            <li>
+              <a href="#" className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors">
+                <Clock className="h-5 w-5" />
+                <span>Time Tracking</span>
+              </a>
+            </li>
+            <li>
+              <a href="#" className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors">
+                <FileText className="h-5 w-5" />
+                <span>Files & Docs</span>
+              </a>
+            </li>
+            <li>
+              <a href="#" className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors">
+                <MessageSquare className="h-5 w-5" />
+                <span>Chat</span>
+              </a>
+            </li>
+            <li>
+              <a href="#" className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors">
+                <BookOpen className="h-5 w-5" />
+                <span>Notes</span>
+              </a>
+            </li>
+            <li>
+              <a href="#" className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors">
+                <Users className="h-5 w-5" />
+                <span>Team</span>
+              </a>
+            </li>
+            <li>
+              <a href="#" className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors">
+                <Settings className="h-5 w-5" />
+                <span>Settings</span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </aside>
 
       {/* Main content */}
       <main className="flex-1">
@@ -189,10 +198,9 @@ const DashboardContent = () => {
                 />
               </div>
             </div>
-            <div className="text-sm text-gray-600 hidden md:block">{user?.email}</div>
+            <div className="text-sm text-gray-600 hidden md:block">{userEmail}</div>
             <Button variant="outline" size="sm" onClick={handleLogout}>
-              <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-              Logout
+              <LogOut className="h-4 w-4 mr-2" /> Logout
             </Button>
           </div>
         </header>
@@ -205,13 +213,11 @@ const DashboardContent = () => {
               onClick={() => setCreateProjectOpen(true)}
               className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700"
             >
-              <svg className="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
-              Create New Project
+              <PlusCircle className="mr-2 h-5 w-5" /> Create New Project
             </Button>
             <Link to="/tasks">
               <Button variant="outline" className="border-indigo-200 text-indigo-700">
-                <svg className="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
-                Create Task
+                <PlusCircle className="mr-2 h-5 w-5" /> Create Task
               </Button>
             </Link>
             <Button 
@@ -226,8 +232,7 @@ const DashboardContent = () => {
               className="border-indigo-200 text-indigo-700"
               onClick={() => setInviteTeamOpen(true)}
             >
-              <svg className="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>
-              Invite Team Member
+              <Users className="mr-2 h-5 w-5" /> Invite Team Member
             </Button>
           </div>
 
@@ -284,8 +289,7 @@ const DashboardContent = () => {
                 className="border-indigo-200 text-indigo-700"
                 onClick={() => setCreateProjectOpen(true)}
               >
-                <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
-                New Project
+                <PlusCircle className="mr-2 h-4 w-4" /> New Project
               </Button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -350,7 +354,7 @@ const DashboardContent = () => {
                 onClick={() => setCreateProjectOpen(true)}
               >
                 <CardContent className="flex flex-col items-center justify-center p-6 text-center">
-                  <svg className="h-12 w-12 text-indigo-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                  <PlusCircle className="h-12 w-12 text-indigo-400 mb-3" />
                   <p className="text-lg font-medium text-indigo-600">Create New Project</p>
                   <p className="text-gray-500 mt-1">Start tracking a new endeavor</p>
                 </CardContent>
@@ -403,8 +407,7 @@ const DashboardContent = () => {
               <Card className="hover:shadow-md transition-shadow bg-gradient-to-r from-amber-50 to-yellow-50">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg text-amber-700 flex items-center">
-                    <svg className="mr-2 h-5 w-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
-                    Communication
+                    <MessageSquare className="mr-2 h-5 w-5 text-amber-500" /> Communication
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="text-sm text-gray-600">
@@ -464,8 +467,7 @@ const DashboardContent = () => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <Link to="/tasks">
                 <Button className="h-auto py-6 justify-start bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 w-full">
-                  <svg className="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
-                  Create New Task
+                  <PlusCircle className="mr-2 h-5 w-5" /> Create New Task
                 </Button>
               </Link>
               <Button 
@@ -473,16 +475,14 @@ const DashboardContent = () => {
                 className="h-auto py-6 justify-start border-indigo-200 text-indigo-700 hover:bg-indigo-50 w-full"
                 onClick={() => setScheduleMeetingOpen(true)}
               >
-                <svg className="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                Schedule Meeting
+                <Calendar className="mr-2 h-5 w-5" /> Schedule Meeting
               </Button>
               <Button 
                 variant="outline" 
                 className="h-auto py-6 justify-start border-indigo-200 text-indigo-700 hover:bg-indigo-50 w-full"
                 onClick={() => setCreateWhiteboardOpen(true)}
               >
-                <svg className="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                Create Whiteboard
+                <FileImage className="mr-2 h-5 w-5" /> Create Whiteboard
               </Button>
               <Button 
                 variant="outline" 

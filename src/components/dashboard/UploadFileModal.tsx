@@ -1,3 +1,4 @@
+
 import { useState, useRef } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { FileUp, X, File, FileText, FileImage, FileArchive } from "lucide-react";
@@ -12,8 +13,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
-import { collection, addDoc } from "firebase/firestore";
-import { db, auth } from "@/integrations/firebase/client";
 
 interface UploadFileModalProps {
   open: boolean;
@@ -26,7 +25,6 @@ type UploadedFile = {
   size: number;
   type: string;
   progress: number;
-  base64Data?: string;
 };
 
 const UploadFileModal = ({ open, onOpenChange }: UploadFileModalProps) => {
@@ -45,30 +43,18 @@ const UploadFileModal = ({ open, onOpenChange }: UploadFileModalProps) => {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const newFiles: UploadedFile[] = [];
+      const newFiles = Array.from(e.target.files).map(file => ({
+        id: uuidv4(),
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        progress: 0
+      }));
+      setFiles([...files, ...newFiles]);
       
-      Array.from(e.target.files).forEach(file => {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          if (event.target) {
-            const newFile = {
-              id: uuidv4(),
-              name: file.name,
-              size: file.size,
-              type: file.type,
-              progress: 0,
-              base64Data: event.target.result as string
-            };
-            
-            newFiles.push(newFile);
-            setFiles(prev => [...prev, newFile]);
-            
-            // Simulate upload for this file
-            simulateFileUpload(newFile.id);
-          }
-        };
-        
-        reader.readAsDataURL(file);
+      // Simulate upload progress
+      newFiles.forEach(file => {
+        simulateFileUpload(file.id);
       });
     }
   };
@@ -91,7 +77,6 @@ const UploadFileModal = ({ open, onOpenChange }: UploadFileModalProps) => {
           // Check if all files are complete after state is updated
           const allComplete = updatedFiles.every(f => f.progress === 100);
           if (allComplete) {
-            saveFilesToFirestore(updatedFiles);
             toast({
               title: "Upload Complete",
               description: "Your files have been uploaded successfully",
@@ -106,52 +91,6 @@ const UploadFileModal = ({ open, onOpenChange }: UploadFileModalProps) => {
         ));
       }
     }, 300);
-  };
-
-  const saveFilesToFirestore = async (filesToSave: UploadedFile[]) => {
-    try {
-      const user = auth.currentUser;
-      if (!user) {
-        throw new Error("User not authenticated");
-      }
-
-      const localStorageOrg = localStorage.getItem("currentOrganizationId");
-      if (!localStorageOrg) {
-        throw new Error("Organization not found");
-      }
-      
-      // For each file, create a document in Firestore
-      for (const file of filesToSave) {
-        const { id, name, size, type, base64Data } = file;
-        
-        // For images only, we'll keep a smaller preview version
-        let thumbnailUrl = null;
-        if (type.includes("image")) {
-          thumbnailUrl = base64Data;
-        }
-        
-        // Store file metadata in Firestore
-        await addDoc(collection(db, "files"), {
-          id,
-          name,
-          size,
-          type,
-          uploadedBy: user.uid,
-          uploadDate: new Date().toISOString(),
-          organizationId: localStorageOrg,
-          base64Data: type.includes("image") ? base64Data : null, // Only store image data directly
-          thumbnailUrl,
-          createdAt: new Date().toISOString()
-        });
-      }
-    } catch (error) {
-      console.error("Error saving files to Firestore:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save files. Please try again.",
-        variant: "destructive",
-      });
-    }
   };
 
   const handleDragEnter = (e: React.DragEvent) => {
@@ -173,27 +112,18 @@ const UploadFileModal = ({ open, onOpenChange }: UploadFileModalProps) => {
     setIsDragging(false);
     
     if (e.dataTransfer.files) {
-      Array.from(e.dataTransfer.files).forEach(file => {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          if (event.target) {
-            const newFile = {
-              id: uuidv4(),
-              name: file.name,
-              size: file.size,
-              type: file.type,
-              progress: 0,
-              base64Data: event.target.result as string
-            };
-            
-            setFiles(prev => [...prev, newFile]);
-            
-            // Simulate upload for this file
-            simulateFileUpload(newFile.id);
-          }
-        };
-        
-        reader.readAsDataURL(file);
+      const newFiles = Array.from(e.dataTransfer.files).map(file => ({
+        id: uuidv4(),
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        progress: 0
+      }));
+      setFiles([...files, ...newFiles]);
+      
+      // Simulate upload progress
+      newFiles.forEach(file => {
+        simulateFileUpload(file.id);
       });
     }
   };

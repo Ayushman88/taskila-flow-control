@@ -1,72 +1,73 @@
+# Welcome to your Lovable project
 
-# Taskila - Project Management App
+## Project info
 
-## Firebase Setup Instructions
+**URL**: https://lovable.dev/projects/b19bf8f4-fd96-4b6e-9179-e619d88b4073
 
-1. **Create a Firebase Project**:
-   - Go to [Firebase Console](https://console.firebase.google.com/)
-   - Click "Add project" and follow the setup steps
-   - Enable Google Analytics if needed
+## How can I edit this code?
 
-2. **Set up Authentication**:
-   - Go to Authentication section in Firebase Console
-   - Enable Email/Password and Google authentication methods
-   - Add authorized domains if deploying to a custom domain
+There are several ways of editing your application.
 
-3. **Set up Firestore Database**:
-   - Go to Firestore Database section
-   - Create a database in production or test mode
-   - Set up indexes as needed for complex queries
+**Use Lovable**
 
-4. **Set up Storage**:
-   - Go to Storage section
-   - Initialize Storage with default rules
+Simply visit the [Lovable Project](https://lovable.dev/projects/b19bf8f4-fd96-4b6e-9179-e619d88b4073) and start prompting.
 
-5. **Set up Firebase Functions** (for Razorpay integration):
-   - Install Firebase CLI: `npm install -g firebase-tools`
-   - Login to Firebase: `firebase login`
-   - Initialize Firebase in your project: `firebase init`
-   - Deploy functions: `firebase deploy --only functions`
+Changes made via Lovable will be committed automatically to this repo.
 
-6. **Copy Firebase Configuration to .env file**:
-   - Go to Project Settings > General
-   - Scroll down to "Your apps" section
-   - Copy the Firebase SDK configuration values to your .env file
+**Use your preferred IDE**
 
-7. **Set up Firebase Security Rules**:
-   - Copy the rules from firebase-rules.txt to your Firebase Console
-   - Go to Firestore Database > Rules and update
-   - Go to Storage > Rules and update
+If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
 
-8. **Razorpay Integration**:
-   - Create a Razorpay account at [Razorpay](https://razorpay.com)
-   - Get your API keys from the Dashboard
-   - Add these keys to your .env file
+The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
-## Running the Application
+Follow these steps:
 
-1. Install dependencies:
-   ```
-   npm install
-   ```
+```sh
+# Step 1: Clone the repository using the project's Git URL.
+git clone <YOUR_GIT_URL>
 
-2. Run the development server:
-   ```
-   npm run dev
-   ```
+# Step 2: Navigate to the project directory.
+cd <YOUR_PROJECT_NAME>
 
-3. For production build:
-   ```
-   npm run build
-   ```
+# Step 3: Install the necessary dependencies.
+npm i
 
-## Firebase Emulators (Optional)
+# Step 4: Start the development server with auto-reloading and an instant preview.
+npm run dev
+```
 
-If you want to use Firebase Emulators for local development:
+**Edit a file directly in GitHub**
 
-1. Install Firebase CLI and login as mentioned above
-2. Start emulators:
-   ```
-   firebase emulators:start
-   ```
-3. Set `VITE_USE_FIREBASE_EMULATORS=true` in your .env file
+- Navigate to the desired file(s).
+- Click the "Edit" button (pencil icon) at the top right of the file view.
+- Make your changes and commit the changes.
+
+**Use GitHub Codespaces**
+
+- Navigate to the main page of your repository.
+- Click on the "Code" button (green button) near the top right.
+- Select the "Codespaces" tab.
+- Click on "New codespace" to launch a new Codespace environment.
+- Edit files directly within the Codespace and commit and push your changes once you're done.
+
+## What technologies are used for this project?
+
+This project is built with:
+
+- Vite
+- TypeScript
+- React
+- shadcn-ui
+- Tailwind CSS
+
+## How can I deploy this project?
+
+Simply open [Lovable](https://lovable.dev/projects/b19bf8f4-fd96-4b6e-9179-e619d88b4073) and click on Share -> Publish.
+
+## Can I connect a custom domain to my Lovable project?
+
+Yes it is!
+
+To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+
+Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)

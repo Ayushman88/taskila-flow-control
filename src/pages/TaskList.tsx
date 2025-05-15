@@ -6,12 +6,22 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { 
+  BarChart2, 
   List, 
   LogOut, 
   PlusCircle, 
+  Settings, 
+  Users,
+  Calendar,
+  FileText,
+  MessageSquare,
   Search,
   Clock,
+  KanbanSquare,
+  GanttChartSquare,
+  BookOpen,
   Menu,
+  Filter,
   ChevronDown,
   ArrowUpDown,
   Edit,
@@ -30,25 +40,18 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { v4 as uuidv4 } from 'uuid';
-import Sidebar from "@/components/layout/Sidebar";
-import { useAuth } from "@/context/AuthContext";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/integrations/firebase/client";
+import Sidebar from "@/components/dashboard/Sidebar";
 
 interface Organization {
-  id: string;
   name: string;
-  team_size: string;
+  teamSize: string;
   plan: string;
-  subscription_status?: string;
-  created_at: string;
-  updated_at: string;
 }
 
 const TaskListContent = () => {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
   const [organization, setOrganization] = useState<Organization | null>(null);
+  const [userEmail, setUserEmail] = useState<string>("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProject, setSelectedProject] = useState<string>("all");
@@ -74,12 +77,19 @@ const TaskListContent = () => {
   } = useTaskContext();
 
   useEffect(() => {
-    if (!user) {
+    const userStr = localStorage.getItem("user");
+    if (!userStr) {
       navigate("/signin");
       return;
     }
     
-    loadUserOrganization();
+    const user = JSON.parse(userStr);
+    setUserEmail(user.email);
+    
+    const orgStr = localStorage.getItem("organization");
+    if (orgStr) {
+      setOrganization(JSON.parse(orgStr));
+    }
 
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -88,49 +98,8 @@ const TaskListContent = () => {
     if (projects.length > 0) {
       setNewTaskProject(projects[0].id);
     }
-  }, [navigate, projects, user]);
+  }, [navigate, projects]);
   
-  const loadUserOrganization = async () => {
-    try {
-      if (!user) return;
-      
-      // Get current organization from localStorage or other source
-      const currentOrgId = localStorage.getItem("currentOrganizationId");
-      
-      if (currentOrgId) {
-        // Fetch organization data from Firestore
-        const orgDoc = await getDoc(doc(db, 'organizations', currentOrgId));
-        
-        if (orgDoc.exists()) {
-          const orgData = orgDoc.data();
-          setOrganization({
-            id: currentOrgId,
-            name: orgData.name,
-            team_size: orgData.team_size,
-            plan: orgData.plan,
-            subscription_status: orgData.subscription_status,
-            created_at: orgData.created_at,
-            updated_at: orgData.updated_at
-          });
-        } else {
-          // Organization not found, navigate back to create organization
-          localStorage.removeItem("currentOrganizationId");
-          navigate("/create-organization");
-        }
-      } else {
-        // No organization selected, navigate to create organization
-        navigate("/create-organization");
-      }
-    } catch (error) {
-      console.error("Error loading organization:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load organization data",
-        variant: "destructive",
-      });
-    }
-  };
-
   const filteredTasks = tasks.filter(task => {
     const searchFilter = searchQuery 
       ? task.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -176,13 +145,13 @@ const TaskListContent = () => {
     return 0;
   });
 
-  const handleLogout = async () => {
-    try {
-      await signOut();
-      navigate("/signin");
-    } catch (error) {
-      console.error("Error signing out:", error);
-    }
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    toast({
+      title: "Logged out",
+      description: "You have been successfully logged out."
+    });
+    navigate("/");
   };
 
   const handleSort = (field: keyof Task) => {
@@ -283,26 +252,17 @@ const TaskListContent = () => {
     "Done": "text-green-700 bg-green-50"
   };
 
-  if (!organization) return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="p-8 text-center">
-        <div className="h-16 w-16 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent mx-auto mb-4"></div>
-        <p className="text-gray-600">Loading organization data...</p>
-      </div>
-    </div>
-  );
+  if (!organization) return <div className="p-8">Loading...</div>;
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Left sidebar */}
-      <Sidebar
-        organizationName={organization.name}
-        organizationPlan={organization.plan}
-        onLogout={handleLogout}
-        isMenuOpen={isMenuOpen}
+      <Sidebar 
+        organization={organization} 
+        isMenuOpen={isMenuOpen} 
+        toggleMenu={toggleMenu}
+        handleLogout={handleLogout}
       />
-      
-      {/* Main content */}
+
       <main className="flex-1">
         <header className="bg-white p-4 shadow-sm flex justify-between items-center sticky top-0 z-10">
           <div className="flex items-center">
@@ -324,7 +284,7 @@ const TaskListContent = () => {
                 />
               </div>
             </div>
-            <div className="text-sm text-gray-600 hidden md:block">{user?.email}</div>
+            <div className="text-sm text-gray-600 hidden md:block">{userEmail}</div>
             <Button variant="outline" size="sm" onClick={handleLogout}>
               <LogOut className="h-4 w-4 mr-2" /> Logout
             </Button>

@@ -1,144 +1,154 @@
 
-import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import {
-  BarChart2,
-  FileText,
-  List,
-  LogOut,
-  Settings,
+import { Link, useLocation } from "react-router-dom";
+import { 
+  BarChart2, 
+  List, 
+  LogOut, 
+  Settings, 
   Users,
   Calendar,
+  FileText,
   MessageSquare,
   KanbanSquare,
   GanttChartSquare,
   BookOpen,
-  Clock,
+  Clock
 } from "lucide-react";
 
-interface SidebarProps {
-  organization: string;
+interface Organization {
+  name: string;
+  teamSize?: string;
   plan: string;
-  onLogout: () => void;
-  isMenuOpen: boolean;
 }
 
-const Sidebar = ({ organization, plan, onLogout, isMenuOpen }: SidebarProps) => (
-  <aside
-    className={`bg-white border-r border-gray-200 transition-all duration-300 ${
-      isMenuOpen ? "w-64" : "w-0 md:w-64"
-    } overflow-y-auto h-screen sticky top-0 shadow-sm hidden md:block`}
-  >
-    <div className="p-6">
-      <div className="mb-8">
-        <h2 className="text-xl font-bold text-indigo-800">{organization}</h2>
-        <span className="inline-block mt-1 text-xs font-medium px-2 py-1 bg-blue-50 text-blue-700 rounded-full">
-          {plan} Plan
-        </span>
+interface SidebarProps {
+  organization: Organization;
+  isMenuOpen: boolean;
+  handleLogout?: () => void;
+  toggleMenu?: () => void;
+}
+
+const Sidebar = ({ organization, isMenuOpen, handleLogout }: SidebarProps) => {
+  const location = useLocation();
+  const currentPath = location.pathname;
+
+  const isActive = (path: string) => {
+    return currentPath === path;
+  };
+
+  return (
+    <aside className={`${isMenuOpen ? 'block' : 'hidden'} md:block w-64 bg-gradient-to-b from-indigo-800 to-purple-900 text-white fixed md:static h-screen z-50 transition-all duration-300 ease-in-out`}>
+      <div className="p-4 border-b border-indigo-700">
+        <h2 className="text-xl font-bold">{organization.name}</h2>
+        <p className="text-sm text-indigo-200">{organization.plan} Plan</p>
       </div>
-
-      <nav className="space-y-1">
-        <Link to="/dashboard">
-          <Button
-            variant="ghost"
-            className="w-full justify-start mb-1 font-normal"
-          >
-            <BarChart2 className="mr-2 h-5 w-5" /> Dashboard
-          </Button>
-        </Link>
-        <Link to="/tasks">
-          <Button
-            variant="ghost"
-            className="w-full justify-start mb-1 font-normal"
-          >
-            <List className="mr-2 h-5 w-5" /> Tasks
-          </Button>
-        </Link>
-        <Link to="/kanban">
-          <Button
-            variant="ghost"
-            className="w-full justify-start mb-1 font-normal"
-          >
-            <KanbanSquare className="mr-2 h-5 w-5" /> Kanban Board
-          </Button>
-        </Link>
-        <Link to="/gantt">
-          <Button
-            variant="ghost"
-            className="w-full justify-start mb-1 font-normal"
-          >
-            <GanttChartSquare className="mr-2 h-5 w-5" /> Gantt Chart
-          </Button>
-        </Link>
-        <Link to="/files">
-          <Button
-            variant="ghost"
-            className="w-full justify-start mb-1 font-normal"
-          >
-            <FileText className="mr-2 h-5 w-5" /> Files & Docs
-          </Button>
-        </Link>
-        <Link to="/time-tracking">
-          <Button
-            variant="ghost"
-            className="w-full justify-start mb-1 font-normal"
-          >
-            <Clock className="mr-2 h-5 w-5" /> Time Tracking
-          </Button>
-        </Link>
-        <Link to="/chat">
-          <Button
-            variant="ghost"
-            className="w-full justify-start mb-1 font-normal"
-          >
-            <MessageSquare className="mr-2 h-5 w-5" /> Chat
-          </Button>
-        </Link>
-        <Link to="/notes">
-          <Button
-            variant="ghost"
-            className="w-full justify-start mb-1 font-normal"
-          >
-            <BookOpen className="mr-2 h-5 w-5" /> Notes
-          </Button>
-        </Link>
-        <Link to="/calendar">
-          <Button
-            variant="ghost"
-            className="w-full justify-start mb-1 font-normal"
-          >
-            <Calendar className="mr-2 h-5 w-5" /> Calendar
-          </Button>
-        </Link>
-        <Link to="/team">
-          <Button
-            variant="ghost"
-            className="w-full justify-start mb-1 font-normal"
-          >
-            <Users className="mr-2 h-5 w-5" /> Team
-          </Button>
-        </Link>
-        <Link to="/settings">
-          <Button
-            variant="ghost"
-            className="w-full justify-start mb-1 font-normal"
-          >
-            <Settings className="mr-2 h-5 w-5" /> Settings
-          </Button>
-        </Link>
+      <nav className="p-2">
+        <ul className="space-y-1">
+          <li>
+            <Link 
+              to="/dashboard" 
+              className={`flex items-center space-x-3 px-3 py-2 rounded-md ${isActive('/dashboard') ? 'bg-indigo-700 text-white font-medium' : 'hover:bg-indigo-700 transition-colors'}`}
+            >
+              <BarChart2 className="h-5 w-5" />
+              <span>Dashboard</span>
+            </Link>
+          </li>
+          <li>
+            <Link 
+              to="/kanban" 
+              className={`flex items-center space-x-3 px-3 py-2 rounded-md ${isActive('/kanban') ? 'bg-indigo-700 text-white font-medium' : 'hover:bg-indigo-700 transition-colors'}`}
+            >
+              <KanbanSquare className="h-5 w-5" />
+              <span>Kanban Board</span>
+            </Link>
+          </li>
+          <li>
+            <Link 
+              to="/gantt" 
+              className={`flex items-center space-x-3 px-3 py-2 rounded-md ${isActive('/gantt') ? 'bg-indigo-700 text-white font-medium' : 'hover:bg-indigo-700 transition-colors'}`}
+            >
+              <GanttChartSquare className="h-5 w-5" />
+              <span>Gantt Chart</span>
+            </Link>
+          </li>
+          <li>
+            <Link 
+              to="/tasks" 
+              className={`flex items-center space-x-3 px-3 py-2 rounded-md ${isActive('/tasks') ? 'bg-indigo-700 text-white font-medium' : 'hover:bg-indigo-700 transition-colors'}`}
+            >
+              <List className="h-5 w-5" />
+              <span>Task List</span>
+            </Link>
+          </li>
+          <li>
+            <Link 
+              to="/time-tracking" 
+              className={`flex items-center space-x-3 px-3 py-2 rounded-md ${isActive('/time-tracking') ? 'bg-indigo-700 text-white font-medium' : 'hover:bg-indigo-700 transition-colors'}`}
+            >
+              <Clock className="h-5 w-5" />
+              <span>Time Tracking</span>
+            </Link>
+          </li>
+          <li>
+            <Link 
+              to="/files" 
+              className={`flex items-center space-x-3 px-3 py-2 rounded-md ${isActive('/files') ? 'bg-indigo-700 text-white font-medium' : 'hover:bg-indigo-700 transition-colors'}`}
+            >
+              <FileText className="h-5 w-5" />
+              <span>Files & Docs</span>
+            </Link>
+          </li>
+          <li>
+            <Link 
+              to="/chat" 
+              className={`flex items-center space-x-3 px-3 py-2 rounded-md ${isActive('/chat') ? 'bg-indigo-700 text-white font-medium' : 'hover:bg-indigo-700 transition-colors'}`}
+            >
+              <MessageSquare className="h-5 w-5" />
+              <span>Chat</span>
+            </Link>
+          </li>
+          <li>
+            <Link 
+              to="/notes" 
+              className={`flex items-center space-x-3 px-3 py-2 rounded-md ${isActive('/notes') ? 'bg-indigo-700 text-white font-medium' : 'hover:bg-indigo-700 transition-colors'}`}
+            >
+              <BookOpen className="h-5 w-5" />
+              <span>Notes</span>
+            </Link>
+          </li>
+          <li>
+            <Link 
+              to="/team" 
+              className={`flex items-center space-x-3 px-3 py-2 rounded-md ${isActive('/team') ? 'bg-indigo-700 text-white font-medium' : 'hover:bg-indigo-700 transition-colors'}`}
+            >
+              <Users className="h-5 w-5" />
+              <span>Team</span>
+            </Link>
+          </li>
+          <li>
+            <Link 
+              to="/settings" 
+              className={`flex items-center space-x-3 px-3 py-2 rounded-md ${isActive('/settings') ? 'bg-indigo-700 text-white font-medium' : 'hover:bg-indigo-700 transition-colors'}`}
+            >
+              <Settings className="h-5 w-5" />
+              <span>Settings</span>
+            </Link>
+          </li>
+          {handleLogout && (
+            <li>
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-indigo-700 transition-colors"
+              >
+                <LogOut className="h-5 w-5" />
+                <span>Logout</span>
+              </button>
+            </li>
+          )}
+        </ul>
       </nav>
-    </div>
-
-    <div className="p-6 border-t border-gray-200 mt-auto">
-      <Button
-        variant="outline"
-        className="w-full flex items-center justify-center"
-        onClick={onLogout}
-      >
-        <LogOut className="mr-2 h-4 w-4" /> Logout
-      </Button>
-    </div>
-  </aside>
-);
+    </aside>
+  );
+};
 
 export default Sidebar;
