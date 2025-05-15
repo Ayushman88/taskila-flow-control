@@ -1,4 +1,40 @@
+import * as React from "react";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Toast,
+  ToastClose,
+  ToastDescription,
+  ToastProvider,
+  ToastTitle,
+  ToastViewport,
+} from "@/components/ui/toast";
 
-import { Toaster } from "@/components/ui/sonner";
+export function Toaster() {
+  const { toasts, toast } = useToast();
 
-export { Toaster };
+  // Listen for toast events
+  React.useEffect(() => {
+    const handleToast = (event: CustomEvent) => {
+      toast(event.detail);
+    };
+
+    window.addEventListener("toast" as any, handleToast);
+    return () => window.removeEventListener("toast" as any, handleToast);
+  }, [toast]);
+
+  return (
+    <ToastProvider>
+      {toasts.map(({ id, title, description, action, ...props }) => (
+        <Toast key={id} {...props}>
+          <div className="grid gap-1">
+            {title && <ToastTitle>{title}</ToastTitle>}
+            {description && <ToastDescription>{description}</ToastDescription>}
+          </div>
+          {action}
+          <ToastClose />
+        </Toast>
+      ))}
+      <ToastViewport />
+    </ToastProvider>
+  );
+}

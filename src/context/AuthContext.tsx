@@ -22,30 +22,16 @@ interface Profile {
   updated_at: string | null;
 }
 
-export interface Organization {
-  id: string;
-  name: string;
-  team_size: string;
-  plan: string;
-  subscription_status?: string;
-  created_at: string;
-  updated_at: string;
-}
-
 interface AuthContextType {
   user: User | null;
   profile: Profile | null;
   isLoading: boolean;
-  organizations: Organization[];
-  currentOrganization: Organization | null;
   signUp: (email: string, password: string, userData?: any) => Promise<any>;
   signIn: (email: string, password: string) => Promise<any>;
   signInWithGoogle: () => Promise<any>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   checkUserOrganization: () => Promise<string | null>;
-  setCurrentOrganization: (orgId: string) => Promise<void>;
-  loadUserOrganizations: () => Promise<Organization[]>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -54,8 +40,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [currentOrganization, setCurrentOrganization] = useState<Organization | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -71,8 +55,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       } else {
         setProfile(null);
         setIsLoading(false);
-        setOrganizations([]);
-        setCurrentOrganization(null);
       }
     });
 
@@ -80,95 +62,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => unsubscribe();
   }, []);
 
-  const loadUserOrganizations = async (): Promise<Organization[]> => {
-    if (!user) return [];
-    
-    try {
-      // Query organization_members collection to find user's organizations
-      const memberQuery = query(
-        collection(db, 'organization_members'),
-        where('user_id', '==', user.uid),
-        where('status', 'in', ['active', 'invited'])
-      );
-      
-      const memberSnapshot = await getDocs(memberQuery);
-      
-      if (memberSnapshot.empty) {
-        return [];
-      }
-
-      // Get organization data for each membership
-      const orgs: Organization[] = [];
-      
-      for (const memberDoc of memberSnapshot.docs) {
-        const orgId = memberDoc.data().organization_id;
-        const orgDoc = await getDoc(doc(db, 'organizations', orgId));
-        
-        if (orgDoc.exists()) {
-          const orgData = orgDoc.data();
-          orgs.push({
-            id: orgDoc.id,
-            name: orgData.name,
-            team_size: orgData.team_size,
-            plan: orgData.plan,
-            subscription_status: orgData.subscription_status,
-            created_at: orgData.created_at,
-            updated_at: orgData.updated_at
-          });
-        }
-      }
-      
-      setOrganizations(orgs);
-      return orgs;
-    } catch (error) {
-      console.error("Error fetching user organizations:", error);
-      return [];
-    }
-  };
-
   const checkAndRedirectUser = async (userId: string) => {
     try {
-      // Load all organizations for the user
-      const orgs = await loadUserOrganizations();
+      // Check if user has an organization
+      const orgId = await checkUserOrganization();
       
-      // Check if user has any organizations
-      if (orgs.length > 0) {
-        // Get current organization from localStorage or use the first one
-        const currentOrgId = localStorage.getItem("currentOrganizationId");
-        
-        let targetOrgId = currentOrgId;
-        let targetOrg = null;
-        
-        // Verify the current organization exists in the user's organizations
-        if (currentOrgId) {
-          targetOrg = orgs.find(org => org.id === currentOrgId);
-        }
-        
-        // If not found, use the first organization
-        if (!targetOrg && orgs.length > 0) {
-          targetOrgId = orgs[0].id;
-          targetOrg = orgs[0];
-        }
-        
-        if (targetOrgId && targetOrg) {
-          // Set current organization in state and localStorage
-          setCurrentOrganization(targetOrg);
-          localStorage.setItem("currentOrganizationId", targetOrgId);
-        }
+      if (orgId) {
+        // User has an organization, set it in localStorage
+        localStorage.setItem("currentOrganizationId", orgId);
       }
-      
       setIsLoading(false);
     } catch (error) {
       console.error("Error checking user organization:", error);
       setIsLoading(false);
-    }
-  };
-
-  const setCurrentOrganizationHandler = async (orgId: string) => {
-    const org = organizations.find(o => o.id === orgId);
-    if (org) {
-      setCurrentOrganization(org);
-      localStorage.setItem("currentOrganizationId", orgId);
     }
   };
 
@@ -194,13 +100,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (!user) return null;
     
     try {
-      // Load organizations first
-      const orgs = await loadUserOrganizations();
+      // Query organization_members collection to find user's organizations
+      const memberQuery = query(
+        collection(db, 'organization_members'),
+        where('user_id', '==', user.uid)
+      );
       
-      // If user has organizations, return the first one's ID
-      if (orgs.length > 0) {
-        const orgId = orgs[0].id;
-        return orgId;
+      const memberSnapshot = await getDocs(memberQuery);
+      
+      if (!memberSnapshot.empty) {
+        // User has at least one organization
+        const memberDoc = memberSnapshot.docs[0];
+        const organizationId = memberDoc.data().organization_id;
+        return organizationId;
       }
       
       return null;
@@ -290,8 +202,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       await firebaseSignOut(auth);
       setUser(null);
       setProfile(null);
-      setOrganizations([]);
-      setCurrentOrganization(null);
       
       // Clear organization from localStorage
       localStorage.removeItem("currentOrganizationId");
@@ -308,16 +218,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     user,
     profile,
     isLoading,
-    organizations,
-    currentOrganization,
     signUp,
     signIn,
     signInWithGoogle,
     signOut,
     refreshProfile,
-    checkUserOrganization,
-    setCurrentOrganization: setCurrentOrganizationHandler,
-    loadUserOrganizations
+    checkUserOrganization
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

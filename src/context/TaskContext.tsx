@@ -1,7 +1,5 @@
+
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
-import { collection, addDoc, updateDoc, deleteDoc, getDocs, doc, query, where } from "firebase/firestore";
-import { db } from "@/integrations/firebase/client";
-import { useAuth } from "@/context/AuthContext";
 
 export interface Task {
   id: string;
@@ -17,8 +15,6 @@ export interface Task {
   attachments?: Attachment[];
   createdAt: string;
   updatedAt: string;
-  createdBy: string;
-  organization_id: string;
 }
 
 interface Comment {
@@ -46,24 +42,20 @@ export interface Project {
   dueDate: string;
   team?: string[];
   createdAt: string;
-  createdBy: string;
-  organization_id: string;
 }
 
 interface TaskContextType {
   tasks: Task[];
   projects: Project[];
-  addTask: (task: Omit<Task, "id" | "createdAt" | "updatedAt" | "createdBy" | "organization_id">) => Promise<Task>;
-  updateTask: (id: string, task: Partial<Task>) => Promise<void>;
-  deleteTask: (id: string) => Promise<void>;
-  addProject: (project: Omit<Project, "id" | "createdAt" | "createdBy" | "organization_id">) => Promise<Project>;
-  updateProject: (id: string, project: Partial<Project>) => Promise<void>;
-  deleteProject: (id: string) => Promise<void>;
+  addTask: (task: Task) => void;
+  updateTask: (id: string, task: Partial<Task>) => void;
+  deleteTask: (id: string) => void;
+  addProject: (project: Project) => void;
+  updateProject: (id: string, project: Partial<Project>) => void;
+  deleteProject: (id: string) => void;
   getTasksByProject: (projectId: string) => Task[];
   getTasksByStatus: (status: Task["status"]) => Task[];
   getProject: (id: string) => Project | undefined;
-  isLoading: boolean;
-  refreshData: () => Promise<void>;
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
@@ -71,216 +63,93 @@ const TaskContext = createContext<TaskContextType | undefined>(undefined);
 export const TaskProvider = ({ children }: { children: ReactNode }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { user, currentOrganization } = useAuth();
+  const [initialized, setInitialized] = useState(false);
 
+  // Load initial data from localStorage
   useEffect(() => {
-    if (user) {
-      loadData();
-    }
-  }, [user, currentOrganization]);
-
-  const loadData = async () => {
-    if (!user) return;
-    
-    setIsLoading(true);
     try {
-      const orgId = localStorage.getItem("currentOrganizationId");
-      if (!orgId) {
-        setTasks([]);
-        setProjects([]);
-        setIsLoading(false);
-        return;
+      const storedTasks = localStorage.getItem("tasks");
+      const storedProjects = localStorage.getItem("projects");
+
+      if (storedTasks) {
+        setTasks(JSON.parse(storedTasks));
+      } else {
+        // Initialize with sample tasks if none exist
+        setTasks(sampleTasks);
+        localStorage.setItem("tasks", JSON.stringify(sampleTasks));
       }
 
-      console.log("Loading data for organization:", orgId);
-
-      // Load tasks
-      const tasksQuery = query(
-        collection(db, 'tasks'),
-        where('organization_id', '==', orgId)
-      );
-      const tasksSnapshot = await getDocs(tasksQuery);
-      const loadedTasks: Task[] = [];
+      if (storedProjects) {
+        setProjects(JSON.parse(storedProjects));
+      } else {
+        // Initialize with sample projects if none exist
+        setProjects(sampleProjects);
+        localStorage.setItem("projects", JSON.stringify(sampleProjects));
+      }
       
-      tasksSnapshot.forEach(doc => {
-        loadedTasks.push({ id: doc.id, ...doc.data() } as Task);
-      });
-      
-      setTasks(loadedTasks);
-      console.log("Loaded tasks:", loadedTasks.length);
-
-      // Load projects
-      const projectsQuery = query(
-        collection(db, 'projects'),
-        where('organization_id', '==', orgId)
-      );
-      const projectsSnapshot = await getDocs(projectsQuery);
-      const loadedProjects: Project[] = [];
-      
-      projectsSnapshot.forEach(doc => {
-        loadedProjects.push({ id: doc.id, ...doc.data() } as Project);
-      });
-      
-      setProjects(loadedProjects);
-      console.log("Loaded projects:", loadedProjects.length);
+      setInitialized(true);
     } catch (error) {
-      console.error("Error loading data from Firestore:", error);
-    } finally {
-      setIsLoading(false);
+      console.error("Error loading data from localStorage:", error);
+      // Fallback to sample data if there's an error
+      setTasks(sampleTasks);
+      setProjects(sampleProjects);
+      setInitialized(true);
     }
+  }, []);
+
+  // Save to localStorage whenever data changes
+  useEffect(() => {
+    if (initialized) {
+      try {
+        localStorage.setItem("tasks", JSON.stringify(tasks));
+      } catch (error) {
+        console.error("Error saving tasks to localStorage:", error);
+      }
+    }
+  }, [tasks, initialized]);
+
+  useEffect(() => {
+    if (initialized) {
+      try {
+        localStorage.setItem("projects", JSON.stringify(projects));
+      } catch (error) {
+        console.error("Error saving projects to localStorage:", error);
+      }
+    }
+  }, [projects, initialized]);
+
+  const addTask = (task: Task) => {
+    setTasks(prevTasks => [...prevTasks, task]);
   };
 
-  const refreshData = async () => {
-    await loadData();
+  const updateTask = (id: string, updatedFields: Partial<Task>) => {
+    setTasks(prevTasks => 
+      prevTasks.map(task => (task.id === id 
+        ? { ...task, ...updatedFields, updatedAt: new Date().toISOString() } 
+        : task))
+    );
   };
 
-  const addTask = async (taskData: Omit<Task, "id" | "createdAt" | "updatedAt" | "createdBy" | "organization_id">) => {
-    if (!user) throw new Error("User not authenticated");
-    
-    const orgId = localStorage.getItem("currentOrganizationId");
-    if (!orgId) throw new Error("No organization selected");
-
-    try {
-      const now = new Date().toISOString();
-      const taskWithMeta = {
-        ...taskData,
-        createdBy: user.uid,
-        organization_id: orgId,
-        createdAt: now,
-        updatedAt: now
-      };
-
-      const docRef = await addDoc(collection(db, 'tasks'), taskWithMeta);
-      
-      const newTask: Task = {
-        id: docRef.id,
-        ...taskWithMeta
-      };
-      
-      setTasks(prevTasks => [...prevTasks, newTask]);
-      
-      return newTask;
-    } catch (error) {
-      console.error("Error adding task:", error);
-      throw error;
-    }
+  const deleteTask = (id: string) => {
+    setTasks(prevTasks => prevTasks.filter(task => task.id !== id));
   };
 
-  const updateTask = async (id: string, updatedFields: Partial<Task>) => {
-    if (!user) throw new Error("User not authenticated");
-
-    try {
-      const taskRef = doc(db, 'tasks', id);
-      
-      const updates = {
-        ...updatedFields,
-        updatedAt: new Date().toISOString()
-      };
-      
-      await updateDoc(taskRef, updates);
-      
-      setTasks(prevTasks => 
-        prevTasks.map(task => task.id === id 
-          ? { ...task, ...updatedFields, updatedAt: updates.updatedAt } 
-          : task
-        )
-      );
-    } catch (error) {
-      console.error("Error updating task:", error);
-      throw error;
-    }
+  const addProject = (project: Project) => {
+    setProjects(prevProjects => [...prevProjects, project]);
   };
 
-  const deleteTask = async (id: string) => {
-    if (!user) throw new Error("User not authenticated");
-
-    try {
-      await deleteDoc(doc(db, 'tasks', id));
-      setTasks(prevTasks => prevTasks.filter(task => task.id !== id));
-    } catch (error) {
-      console.error("Error deleting task:", error);
-      throw error;
-    }
+  const updateProject = (id: string, updatedFields: Partial<Project>) => {
+    setProjects(prevProjects =>
+      prevProjects.map(project => (project.id === id 
+        ? { ...project, ...updatedFields } 
+        : project))
+    );
   };
 
-  const addProject = async (projectData: Omit<Project, "id" | "createdAt" | "createdBy" | "organization_id">) => {
-    if (!user) throw new Error("User not authenticated");
-    
-    const orgId = localStorage.getItem("currentOrganizationId");
-    if (!orgId) throw new Error("No organization selected");
-
-    try {
-      const projectWithMeta = {
-        ...projectData,
-        createdBy: user.uid,
-        organization_id: orgId,
-        createdAt: new Date().toISOString()
-      };
-
-      const docRef = await addDoc(collection(db, 'projects'), projectWithMeta);
-      
-      const newProject: Project = {
-        id: docRef.id,
-        ...projectWithMeta
-      };
-      
-      setProjects(prevProjects => [...prevProjects, newProject]);
-      
-      return newProject;
-    } catch (error) {
-      console.error("Error adding project:", error);
-      throw error;
-    }
-  };
-
-  const updateProject = async (id: string, updatedFields: Partial<Project>) => {
-    if (!user) throw new Error("User not authenticated");
-
-    try {
-      const projectRef = doc(db, 'projects', id);
-      await updateDoc(projectRef, updatedFields);
-      
-      setProjects(prevProjects =>
-        prevProjects.map(project => project.id === id 
-          ? { ...project, ...updatedFields } 
-          : project)
-      );
-    } catch (error) {
-      console.error("Error updating project:", error);
-      throw error;
-    }
-  };
-
-  const deleteProject = async (id: string) => {
-    if (!user) throw new Error("User not authenticated");
-
-    try {
-      // Delete the project
-      await deleteDoc(doc(db, 'projects', id));
-      
-      // Also delete all tasks associated with this project
-      const tasksQuery = query(
-        collection(db, 'tasks'),
-        where('projectId', '==', id)
-      );
-      
-      const tasksSnapshot = await getDocs(tasksQuery);
-      
-      // Batch delete all tasks
-      const deletePromises = tasksSnapshot.docs.map(doc => 
-        deleteDoc(doc.ref)
-      );
-      
-      await Promise.all(deletePromises);
-      
-      // Update state
-      setProjects(prevProjects => prevProjects.filter(project => project.id !== id));
-      setTasks(prevTasks => prevTasks.filter(task => task.projectId !== id));
-    } catch (error) {
-      console.error("Error deleting project:", error);
-      throw error;
-    }
+  const deleteProject = (id: string) => {
+    setProjects(prevProjects => prevProjects.filter(project => project.id !== id));
+    // Also delete all tasks associated with this project
+    setTasks(prevTasks => prevTasks.filter(task => task.projectId !== id));
   };
 
   const getTasksByProject = (projectId: string) => {
@@ -309,8 +178,6 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         getTasksByProject,
         getTasksByStatus,
         getProject,
-        isLoading,
-        refreshData
       }}
     >
       {children}
@@ -325,3 +192,147 @@ export const useTaskContext = () => {
   }
   return context;
 };
+
+// Sample data
+const sampleProjects: Project[] = [
+  {
+    id: "1",
+    name: "Website Redesign",
+    description: "Update the company website with new branding",
+    status: "In Progress",
+    progress: 60,
+    dueDate: "2025-05-15",
+    createdAt: "2025-03-01T10:00:00Z",
+  },
+  {
+    id: "2",
+    name: "Mobile App Development",
+    description: "Create a mobile app for our customers",
+    status: "To Do",
+    progress: 10,
+    dueDate: "2025-06-30",
+    createdAt: "2025-03-15T09:30:00Z",
+  },
+  {
+    id: "3",
+    name: "Marketing Campaign",
+    description: "Q2 digital marketing campaign planning",
+    status: "In Progress",
+    progress: 45,
+    dueDate: "2025-04-30",
+    createdAt: "2025-03-10T14:15:00Z",
+  }
+];
+
+const sampleTasks: Task[] = [
+  {
+    id: "task1",
+    title: "Design homepage mockup",
+    description: "Create wireframes for the new homepage design",
+    status: "In Progress",
+    priority: "High",
+    dueDate: "2025-04-20",
+    projectId: "1",
+    createdAt: "2025-03-05T11:30:00Z",
+    updatedAt: "2025-03-06T09:15:00Z",
+  },
+  {
+    id: "task2",
+    title: "Develop landing page",
+    description: "Implement the new landing page based on approved designs",
+    status: "To Do",
+    priority: "Medium",
+    dueDate: "2025-04-25",
+    projectId: "1",
+    createdAt: "2025-03-07T10:20:00Z",
+    updatedAt: "2025-03-07T10:20:00Z",
+  },
+  {
+    id: "task3",
+    title: "Create app wireframes",
+    description: "Design initial wireframes for the mobile application",
+    status: "Done",
+    priority: "High",
+    dueDate: "2025-03-30",
+    projectId: "2",
+    createdAt: "2025-03-16T13:45:00Z",
+    updatedAt: "2025-03-29T16:20:00Z",
+  },
+  {
+    id: "task4",
+    title: "Research competitors",
+    description: "Analyze competing applications and identify opportunities",
+    status: "In Progress",
+    priority: "Medium",
+    dueDate: "2025-04-10",
+    projectId: "2",
+    createdAt: "2025-03-17T09:30:00Z",
+    updatedAt: "2025-03-18T14:10:00Z",
+  },
+  {
+    id: "task5",
+    title: "Define target audience",
+    description: "Create user personas for the marketing campaign",
+    status: "Done",
+    priority: "High",
+    dueDate: "2025-03-25",
+    projectId: "3",
+    createdAt: "2025-03-11T11:00:00Z",
+    updatedAt: "2025-03-24T16:45:00Z",
+  },
+  {
+    id: "task6",
+    title: "Create social media content calendar",
+    description: "Plan out posts for the next 3 months",
+    status: "In Progress",
+    priority: "Medium",
+    dueDate: "2025-04-15",
+    projectId: "3",
+    createdAt: "2025-03-12T10:15:00Z",
+    updatedAt: "2025-03-14T09:50:00Z",
+  },
+  {
+    id: "task7",
+    title: "SEO optimization",
+    description: "Improve website SEO based on keyword research",
+    status: "To Do",
+    priority: "Medium",
+    dueDate: "2025-05-01",
+    projectId: "1",
+    createdAt: "2025-03-08T15:20:00Z",
+    updatedAt: "2025-03-08T15:20:00Z",
+  },
+  {
+    id: "task8",
+    title: "Implement analytics tracking",
+    description: "Set up Google Analytics and conversion tracking",
+    status: "To Do",
+    priority: "Low",
+    dueDate: "2025-05-05",
+    projectId: "1",
+    createdAt: "2025-03-09T14:10:00Z",
+    updatedAt: "2025-03-09T14:10:00Z",
+  },
+  {
+    id: "task9",
+    title: "Design app logo",
+    description: "Create logo variations for the mobile app",
+    status: "To Do",
+    priority: "Medium",
+    dueDate: "2025-04-20",
+    projectId: "2",
+    createdAt: "2025-03-18T11:30:00Z",
+    updatedAt: "2025-03-18T11:30:00Z",
+  },
+  {
+    id: "task10",
+    title: "Prepare ad creative",
+    description: "Design banner ads for the campaign",
+    status: "To Do",
+    priority: "High",
+    dueDate: "2025-04-10",
+    projectId: "3",
+    createdAt: "2025-03-13T13:25:00Z",
+    updatedAt: "2025-03-13T13:25:00Z",
+  }
+];

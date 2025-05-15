@@ -27,13 +27,12 @@ import {
   AlertTriangle,
   Filter
 } from "lucide-react";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { v4 as uuidv4 } from 'uuid';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useAuth } from "@/context/AuthContext";
 
 interface Organization {
   name: string;
@@ -106,7 +105,6 @@ const KanbanBoardContent = () => {
   const [newTaskDueDate, setNewTaskDueDate] = useState("");
   const [newTaskProject, setNewTaskProject] = useState("");
   const [newTaskStatus, setNewTaskStatus] = useState<"To Do" | "In Progress" | "In Review" | "Done">("To Do");
-  const [selectedProject, setSelectedProject] = useState<string | null>(null);
   
   const { 
     tasks, 
@@ -115,8 +113,6 @@ const KanbanBoardContent = () => {
     updateTask,
     getTasksByStatus 
   } = useTaskContext();
-  
-  const { user, currentOrganization } = useAuth();
 
   const todoTasks = getTasksByStatus("To Do");
   const inProgressTasks = getTasksByStatus("In Progress");
@@ -178,49 +174,33 @@ const KanbanBoardContent = () => {
       });
       return;
     }
-    
-    // Make sure we have the organization ID and user ID
-    const orgId = localStorage.getItem("currentOrganizationId");
-    if (!orgId || !user) {
-      toast({
-        title: "Error",
-        description: "Authentication issue. Please log in again.",
-        variant: "destructive",
-      });
-      return;
-    }
 
-    const newTask = {
+    const newTask: Task = {
+      id: uuidv4(),
       title: newTaskTitle,
       description: newTaskDescription,
       status: newTaskStatus,
       priority: newTaskPriority,
       dueDate: newTaskDueDate,
       projectId: newTaskProject,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
 
-    addTask(newTask)
-      .then(() => {
-        // Reset form
-        setNewTaskTitle("");
-        setNewTaskDescription("");
-        setNewTaskPriority("Medium");
-        setNewTaskStatus("To Do");
-        setIsNewTaskDialogOpen(false);
-        
-        toast({
-          title: "Task created",
-          description: "Your new task has been added to the board."
-        });
-      })
-      .catch(error => {
-        console.error("Error adding task:", error);
-        toast({
-          title: "Error",
-          description: "Failed to create task. Please try again.",
-          variant: "destructive",
-        });
-      });
+    addTask(newTask);
+    
+    // Reset form
+    setNewTaskTitle("");
+    setNewTaskDescription("");
+    setNewTaskPriority("Medium");
+    setNewTaskStatus("To Do");
+    
+    setIsNewTaskDialogOpen(false);
+    
+    toast({
+      title: "Task created",
+      description: "Your new task has been added to the board."
+    });
   };
 
   const toggleMenu = () => {
@@ -241,61 +221,6 @@ const KanbanBoardContent = () => {
       title: "Task updated",
       description: `Task moved to ${status}`
     });
-  };
-
-  const handleAddTask = async () => {
-    try {
-      if (!selectedProject) {
-        toast({
-          title: "Error",
-          description: "Please select a project first",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      if (!newTaskTitle.trim()) {
-        toast({
-          title: "Error",
-          description: "Task title cannot be empty",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      // Make sure we have the organization ID and user ID
-      const orgId = localStorage.getItem("currentOrganizationId");
-      if (!orgId || !user) {
-        toast({
-          title: "Error",
-          description: "Authentication issue. Please log in again.",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      await addTask({
-        title: newTaskTitle,
-        description: newTaskDescription,
-        status: newTaskStatus,
-        priority: newTaskPriority,
-        dueDate: newTaskDueDate,
-        projectId: newTaskProject,
-      });
-      
-      setIsNewTaskDialogOpen(false);
-      toast({
-        title: "Task Created",
-        description: "Task created successfully",
-      });
-    } catch (error) {
-      console.error("Error adding task:", error);
-      toast({
-        title: "Error",
-        description: "Failed to create task",
-        variant: "destructive",
-      });
-    }
   };
 
   if (!organization) return <div className="p-8">Loading...</div>;

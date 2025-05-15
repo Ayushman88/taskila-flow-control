@@ -1,27 +1,43 @@
+import * as React from "react";
+import type { Toast } from "@/components/ui/use-toast";
 
-import { toast as sonnerToast } from "sonner";
+const TOAST_LIMIT = 1;
+const TOAST_REMOVE_DELAY = 1000000;
 
-// Re-export toast from sonner for consistency
-export const toast = sonnerToast;
+type State = {
+  toasts: Toast[];
+};
 
-// Provide a useToast hook for compatibility with existing code
-export const useToast = () => {
+const memoryState: State = { toasts: [] };
+
+export function useToast() {
+  const [state, setState] = React.useState<State>(memoryState);
+
   return {
-    toast: sonnerToast,
-    // Empty toasts array for compatibility with existing toaster component
-    toasts: [],
-    // No-op function for compatibility
-    dismiss: () => {},
+    toasts: state.toasts,
+    toast: (props: Omit<Toast, "id">) => {
+      const id = Math.random().toString(36).slice(2);
+      setState((prev) => ({
+        ...prev,
+        toasts: [...prev.toasts, { ...props, id }],
+      }));
+      return id;
+    },
+    dismiss: (id: string) => {
+      setState((prev) => ({
+        ...prev,
+        toasts: prev.toasts.filter((toast) => toast.id !== id),
+      }));
+    },
   };
-};
+}
 
-// Export types for compatibility
-export type Toast = {
-  id?: string;
-  title?: string;
-  description?: React.ReactNode;
-  action?: React.ReactNode;
-  variant?: "default" | "destructive";
-};
+let toastFn: ((props: Omit<Toast, "id">) => string) | null = null;
 
-export type ToastActionElement = React.ReactNode;
+export function toast(props: Omit<Toast, "id">) {
+  if (!toastFn) {
+    const { toast } = useToast();
+    toastFn = toast;
+  }
+  return toastFn(props);
+}

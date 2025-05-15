@@ -1,5 +1,17 @@
-
+import { type ToastProps } from "@/components/ui/toast";
+import * as ToastPrimitive from "@radix-ui/react-toast";
 import { useToast, toast } from "@/hooks/use-toast";
-import type { Toast, ToastActionElement } from "@/hooks/use-toast";
 
-export { type Toast, type ToastActionElement, useToast, toast };
+export { useToast, toast };
+
+export interface Toast {
+  id: string;
+  title?: React.ReactNode;
+  description?: React.ReactNode;
+  action?: ToastActionElement;
+  variant?: "default" | "destructive";
+}
+
+export type ToastActionElement = React.ReactElement<
+  typeof ToastPrimitive.Action
+>;

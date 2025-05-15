@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,7 @@ import { FcGoogle } from "react-icons/fc";
 
 const SignIn = () => {
   const navigate = useNavigate();
-  const { signIn, signInWithGoogle, user, loadUserOrganizations } = useAuth();
+  const { signIn, signInWithGoogle, checkUserOrganization, user } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -25,12 +26,11 @@ const SignIn = () => {
 
   const handleSuccessfulAuth = async () => {
     try {
-      // Load user's organizations
-      const organizations = await loadUserOrganizations();
+      // Check if user has an organization
+      const orgId = await checkUserOrganization();
       
-      if (organizations.length > 0) {
-        // User has at least one organization, select it and redirect to dashboard
-        localStorage.setItem("currentOrganizationId", organizations[0].id);
+      if (orgId) {
+        // User has organization, redirect to dashboard
         navigate("/dashboard");
       } else {
         // User doesn't have organization, redirect to create one
@@ -38,7 +38,6 @@ const SignIn = () => {
       }
     } catch (error) {
       console.error("Error during redirection:", error);
-      navigate("/create-organization");
     }
   };
 
@@ -50,6 +49,7 @@ const SignIn = () => {
       toast({
         title: "Error",
         description: "Please enter both email and password",
+        variant: "destructive",
       });
       setIsSubmitting(false);
       return;
@@ -68,6 +68,7 @@ const SignIn = () => {
       toast({
         title: "Error signing in",
         description: error.message || "An error occurred while signing in",
+        variant: "destructive",
       });
       setIsSubmitting(false);
     }
@@ -81,6 +82,7 @@ const SignIn = () => {
       toast({
         title: "Error",
         description: error.message || "Failed to sign in with Google",
+        variant: "destructive",
       });
     }
   };
