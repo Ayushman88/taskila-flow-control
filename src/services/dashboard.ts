@@ -13,10 +13,8 @@ export interface Organization {
   updated_at: string;
 }
 
-export const getUserOrganizations = async (): Promise<Organization[]> => {
-  const { user } = useAuth();
-  
-  if (!user) {
+export const getUserOrganizations = async (userId: string): Promise<Organization[]> => {
+  if (!userId) {
     throw new Error("User not authenticated");
   }
 
@@ -24,7 +22,8 @@ export const getUserOrganizations = async (): Promise<Organization[]> => {
     // Query organization_members to find user's organizations
     const memberQuery = query(
       collection(db, 'organization_members'),
-      where('user_id', '==', user.uid)
+      where('user_id', '==', userId),
+      where('status', 'in', ['active', 'invited'])
     );
     const memberSnapshot = await getDocs(memberQuery);
     

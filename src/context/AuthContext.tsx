@@ -103,7 +103,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // Query organization_members collection to find user's organizations
       const memberQuery = query(
         collection(db, 'organization_members'),
-        where('user_id', '==', user.uid)
+        where('user_id', '==', user.uid),
+        where('status', '==', 'active')
       );
       
       const memberSnapshot = await getDocs(memberQuery);

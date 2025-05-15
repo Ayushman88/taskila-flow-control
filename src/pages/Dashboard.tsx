@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -30,9 +31,10 @@ import ScheduleMeetingModal from "@/components/dashboard/ScheduleMeetingModal";
 import CreateWhiteboardModal from "@/components/dashboard/CreateWhiteboardModal";
 import CreateDocumentModal from "@/components/dashboard/CreateDocumentModal";
 import { useAuth } from "@/context/AuthContext";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, collection, addDoc, serverTimestamp, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/integrations/firebase/client";
 import Sidebar from "@/components/layout/Sidebar";
+import DashboardChatBot from "@/components/dashboard/DashboardChatBot";
 
 interface Organization {
   id: string;
@@ -558,6 +560,9 @@ const DashboardContent = () => {
         open={createDocumentOpen} 
         onOpenChange={setCreateDocumentOpen} 
       />
+
+      {/* ChatBot */}
+      {organization && <DashboardChatBot organizationId={organization.id} />}
     </div>
   );
 };

@@ -1,8 +1,9 @@
+
 import { type ToastProps } from "@/components/ui/toast";
 import * as ToastPrimitive from "@radix-ui/react-toast";
-import { useToast, toast } from "@/hooks/use-toast";
+import { useToast as useToastHook, toast as toastFunc } from "@/hooks/use-toast";
 
-export { useToast, toast };
+export { useToastHook as useToast, toastFunc as toast };
 
 export interface Toast {
   id: string;
